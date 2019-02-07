@@ -1,0 +1,10 @@
+sx1272mb2das.c:108:10:SX1272GetWakeTime	0	static
+sx1272mb2das.c:113:6:SX1272SetXO	0	static
+sx1272mb2das.c:219:6:SX1272SetAntSwLowPower	0	static
+sx1272mb2das.c:224:6:SX1272SetAntSw	0	static
+sx1272mb2das.c:240:6:SX1272CheckRfFrequency	0	static
+sx1272mb2das.c:153:6:SX1272SetRfTxPower	16	static
+sx1272mb2das.c:116:6:SX1272IoInit	32	static
+sx1272mb2das.c:140:6:SX1272IoDeInit	32	static
+sx1272mb2das.c:132:6:SX1272IoIrqInit	16	static
+sx1272mb2das.c:214:9:SX1272GetPaSelect	0	static

@@ -1,0 +1,14 @@
+stm32l0xx_hw.c:123:6:HW_DeInit	8	static
+stm32l0xx_hw.c:163:6:HW_GpioInit	0	static
+stm32l0xx_hw.c:184:6:SystemClock_Config	88	static
+stm32l0xx_hw.c:229:10:HW_GetRandomSeed	0	static
+stm32l0xx_hw.c:239:6:HW_GetUniqueId	8	static
+stm32l0xx_hw.c:327:6:HW_AdcInit	8	static
+stm32l0xx_hw.c:95:6:HW_Init	16	static
+stm32l0xx_hw.c:365:6:HW_AdcDeInit	0	static
+stm32l0xx_hw.c:375:10:HW_AdcReadChannel	32	static
+stm32l0xx_hw.c:251:10:HW_GetTemperatureLevel	16	static
+stm32l0xx_hw.c:290:9:HW_GetBatteryLevel	8	static
+stm32l0xx_hw.c:423:6:LPM_EnterStopMode	8	static
+stm32l0xx_hw.c:445:6:LPM_ExitStopMode	16	static
+stm32l0xx_hw.c:483:6:LPM_EnterSleepMode	8	static
