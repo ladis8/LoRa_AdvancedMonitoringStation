@@ -41,7 +41,6 @@
   */
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
-   /* Return function status */
   return HAL_OK;
 }
 
@@ -52,7 +51,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   */
 void HAL_Delay(__IO uint32_t Delay)
 {
-  HW_RTC_DelayMs( Delay ); /* based on RTC */
+  HW_RTC_DelayMs( Delay ); //based on RTC
 }
 
 /**

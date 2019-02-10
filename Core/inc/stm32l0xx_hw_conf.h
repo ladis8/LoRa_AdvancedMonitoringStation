@@ -1,37 +1,3 @@
-/*
- / _____)             _              | |
-( (____  _____ ____ _| |_ _____  ____| |__
- \____ \| ___ |    (_   _) ___ |/ ___)  _ \
- _____) ) ____| | | || |_| ____( (___| | | |
-(______/|_____)_|_|_| \__)_____)\____)_| |_|
-    (C)2013 Semtech
-
-Description: contains hardaware configuration Macros and Constants
-
-License: Revised BSD License, see LICENSE.TXT file include in the project
-
-Maintainer: Miguel Luis and Gregory Cristian
-*/
-/**
-  ******************************************************************************
-  * @file    stm32l0xx_hw_conf.h
-  * @author  MCD Application Team
-  * @brief   contains hardaware configuration Macros and Constants
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2018 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __HW_CONF_L0_H__
 #define __HW_CONF_L0_H__
 
@@ -39,62 +5,8 @@ Maintainer: Miguel Luis and Gregory Cristian
  extern "C" {
 #endif
 
-/* Includes ------------------------------------------------------------------*/
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
 
-//#define RADIO_DIO_4
-//#define RADIO_DIO_5
-
-/* LORA I/O definition */
-
-#ifdef USE_SX126X_DVK
-
-#define RADIO_RESET_PORT                          GPIOA
-#define RADIO_RESET_PIN                           GPIO_PIN_0
-
-#define RADIO_MOSI_PORT                           GPIOA
-#define RADIO_MOSI_PIN                            GPIO_PIN_7
-
-#define RADIO_MISO_PORT                           GPIOA
-#define RADIO_MISO_PIN                            GPIO_PIN_6
-
-#define RADIO_SCLK_PORT                           GPIOA
-#define RADIO_SCLK_PIN                            GPIO_PIN_5
-
-#define RADIO_NSS_PORT                            GPIOA
-#define RADIO_NSS_PIN                             GPIO_PIN_8
-
-#define RADIO_BUSY_PORT                           GPIOB
-#define RADIO_BUSY_PIN                            GPIO_PIN_3
-
-#define RADIO_DIO_0_PORT                          GPIOA
-#define RADIO_DIO_0_PIN                           GPIO_PIN_10
-
-#define RADIO_DIO_1_PORT                          GPIOB
-#define RADIO_DIO_1_PIN                           GPIO_PIN_4
-
-#define RADIO_DIO_2_PORT                          GPIOB
-#define RADIO_DIO_2_PIN                           GPIO_PIN_5
-
-#define RADIO_DIO_3_PORT                          GPIOB
-#define RADIO_DIO_3_PIN                           GPIO_PIN_4
-
-#define RADIO_ANT_SWITCH_POWER_PORT               GPIOA
-#define RADIO_ANT_SWITCH_POWER_PIN                GPIO_PIN_9
-
-#define DEVICE_SEL_PORT                           GPIOA
-#define DEVICE_SEL_PIN                            GPIO_PIN_4
-
-#define RADIO_LEDTX_PORT                           GPIOC
-#define RADIO_LEDTX_PIN                            GPIO_PIN_1
-
-#define RADIO_LEDRX_PORT                           GPIOC
-#define RADIO_LEDRX_PIN                            GPIO_PIN_0
-
-#else
-
-
+//LORA I/O definition
 #define RADIO_RESET_PORT                          GPIOA
 #define RADIO_RESET_PIN                           GPIO_PIN_0
 
@@ -122,24 +34,24 @@ Maintainer: Miguel Luis and Gregory Cristian
 #define RADIO_DIO_3_PORT                          GPIOB
 #define RADIO_DIO_3_PIN                           GPIO_PIN_4
 
-#ifdef RADIO_DIO_4 
-#define RADIO_DIO_4_PORT                          GPIOA
-#define RADIO_DIO_4_PIN                           GPIO_PIN_9
-#endif
-
-#ifdef RADIO_DIO_5 
-#define RADIO_DIO_5_PORT                          GPIOC
-#define RADIO_DIO_5_PIN                           GPIO_PIN_7
-#endif
-
-
 
 #define RADIO_ANT_SWITCH_PORT                     GPIOC
 #define RADIO_ANT_SWITCH_PIN                      GPIO_PIN_1
 
-#endif
 
-/*  SPI MACRO redefinition */
+ //I2C definitions
+#define I2Cx									  I2C1
+#define I2Cx_GPIOPORT							  GPIOB
+#define I2Cx_GPIO_CLK_ENABLE()					  __GPIOB_CLK_ENABLE()
+
+#define I2Cx_SCL_PIN							  GPIO_PIN_8
+#define I2Cx_SDA_PIN 							  GPIO_PIN_9
+
+#define I2Cx_CLK_ENABLE()                		  __HAL_RCC_I2C1_CLK_ENABLE()
+#define I2Cx_AF									  GPIO_AF4_I2C1
+
+
+ /*  SPI MACRO redefinition */
 
 #define SPI_CLK_ENABLE()                __HAL_RCC_SPI1_CLK_ENABLE()
 
@@ -204,4 +116,3 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 #endif /* __HW_CONF_L0_H__ */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
