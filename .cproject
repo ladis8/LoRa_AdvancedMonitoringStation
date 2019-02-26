@@ -98,6 +98,7 @@
 								<option id="com.atollic.truestudio.common_options.target.instr_set.394630803" name="Instruction set" superClass="com.atollic.truestudio.common_options.target.instr_set" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.instr_set.thumb2" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.fpu.1085392256" name="Floating point" superClass="com.atollic.truestudio.common_options.target.fpu" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.fpu.soft" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.fpucore.30362102" name="FPU" superClass="com.atollic.truestudio.common_options.target.fpucore" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.fpucore.None" valueType="enumerated"/>
+								<option id="com.atollic.truestudio.as.symbols.defined.137050626" name="Defined symbols" superClass="com.atollic.truestudio.as.symbols.defined" valueType="definedSymbols"/>
 								<inputType id="com.atollic.truestudio.as.input.1213086573" name="Input" superClass="com.atollic.truestudio.as.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.exe.debug.toolchain.gcc.2030724841" name="C Compiler" superClass="com.atollic.truestudio.exe.debug.toolchain.gcc">
@@ -123,6 +124,7 @@
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 									<listOptionValue builtIn="false" value=" REGION_EU868"/>
 									<listOptionValue builtIn="false" value="USE_MODEM_LORA"/>
+									<listOptionValue builtIn="false" value="ARM_MATH_CM0PLUS"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.misc.otherflags.237677372" name="Other options" superClass="com.atollic.truestudio.gcc.misc.otherflags" useByScannerDiscovery="false" value="-fmessage-length=0" valueType="string"/>
 								<option id="com.atollic.truestudio.gcc.cstandard.254076213" name="C standard" superClass="com.atollic.truestudio.gcc.cstandard" useByScannerDiscovery="false" value="com.atollic.truestudio.gcc.cstandard.gnu1x" valueType="enumerated"/>
@@ -136,7 +138,7 @@
 								<option id="com.atollic.truestudio.ld.general.scriptfile.326434719" name="Linker script" superClass="com.atollic.truestudio.ld.general.scriptfile" useByScannerDiscovery="false" value="/home/ladislav/WORKSPACE/Atollic/TrueSTUDIO/STM32_workspace_9.1/L073_lora/STM32L073RZTx_FLASH.ld" valueType="string"/>
 								<option id="com.atollic.truestudio.ld.optimization.do_garbage.37750009" name="Dead code removal " superClass="com.atollic.truestudio.ld.optimization.do_garbage" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<option id="com.atollic.truestudio.ld.general.syscall_lib.1880328256" name="System calls" superClass="com.atollic.truestudio.ld.general.syscall_lib" useByScannerDiscovery="false" value="com.atollic.truestudio.ld.general.syscalls_lib.nosys" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.ld.misc.linkerflags.15183411" name="Other options" superClass="com.atollic.truestudio.ld.misc.linkerflags" useByScannerDiscovery="false" value=" " valueType="string"/>
+								<option id="com.atollic.truestudio.ld.misc.linkerflags.15183411" name="Other options" superClass="com.atollic.truestudio.ld.misc.linkerflags" useByScannerDiscovery="false" value="  -u _printf_float" valueType="string"/>
 								<option id="com.atollic.truestudio.common_options.target.mcpu.426636083" name="Microcontroller" superClass="com.atollic.truestudio.common_options.target.mcpu" useByScannerDiscovery="false" value="STM32L073RZ" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.instr_set.1240823237" name="Instruction set" superClass="com.atollic.truestudio.common_options.target.instr_set" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.instr_set.thumb2" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.fpu.1359283342" name="Floating point" superClass="com.atollic.truestudio.common_options.target.fpu" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.fpu.soft" valueType="enumerated"/>
@@ -171,11 +173,12 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="hw_adc_CMSIS.c|main_old.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="App/src"/>
+						<entry excluding="main_old.c|hw_adc_CMSIS.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="App/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core/src"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers/DSP_lib"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers_linked/BSP/STM32L0xx_Nucleo"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers_linked/BSP/SX1272MB2DAS"/>
-						<entry excluding="stm32l0xx_hal_comp_ex.c|stm32l0xx_hal_comp.c|stm32l0xx_hal_crc_ex.c|stm32l0xx_hal_crc.c|stm32l0xx_hal_cryp_ex.c|stm32l0xx_hal_cryp.c|stm32l0xx_hal_dac_ex.c|stm32l0xx_hal_dac.c|stm32l0xx_hal_firewall.c|stm32l0xx_hal_flash_ex.c|stm32l0xx_hal_flash_ramfunc.c|stm32l0xx_hal_flash.c|stm32l0xx_hal_i2s.c|stm32l0xx_hal_irda.c|stm32l0xx_hal_iwdg.c|stm32l0xx_hal_lcd.c|stm32l0xx_hal_lptim.c|stm32l0xx_hal_msp_template.c|stm32l0xx_hal_pcd_ex.c|stm32l0xx_hal_pcd.c|stm32l0xx_hal_rng.c|stm32l0xx_hal_smartcard_ex.c|stm32l0xx_hal_smartcard.c|stm32l0xx_hal_smbus.c|stm32l0xx_hal_tsc.c|stm32l0xx_hal_usart.c|stm32l0xx_hal_wwdg.c|stm32l0xx_ll_adc.c|stm32l0xx_ll_comp.c|stm32l0xx_ll_crc.c|stm32l0xx_ll_crs.c|stm32l0xx_ll_dac.c|stm32l0xx_ll_dma.c|stm32l0xx_ll_exti.c|stm32l0xx_ll_gpio.c|stm32l0xx_ll_i2c.c|stm32l0xx_ll_lptim.c|stm32l0xx_ll_lpuart.c|stm32l0xx_ll_pwr.c|stm32l0xx_ll_rcc.c|stm32l0xx_ll_rng.c|stm32l0xx_ll_rtc.c|stm32l0xx_ll_spi.c|stm32l0xx_ll_tim.c|stm32l0xx_ll_usart.c|stm32l0xx_ll_utils.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers_linked/STM32L0xx_HAL_Driver/Src"/>
+						<entry excluding="stm32l0xx_ll_usart.c|stm32l0xx_hal_comp.c|stm32l0xx_hal_irda.c|stm32l0xx_ll_rcc.c|stm32l0xx_ll_rng.c|stm32l0xx_hal_lcd.c|stm32l0xx_ll_pwr.c|stm32l0xx_hal_flash_ex.c|stm32l0xx_hal_flash.c|stm32l0xx_hal_lptim.c|stm32l0xx_hal_pcd.c|stm32l0xx_hal_cryp.c|stm32l0xx_ll_rtc.c|stm32l0xx_ll_adc.c|stm32l0xx_ll_i2c.c|stm32l0xx_hal_flash_ramfunc.c|stm32l0xx_hal_crc.c|stm32l0xx_hal_tsc.c|stm32l0xx_hal_dac.c|stm32l0xx_hal_iwdg.c|stm32l0xx_hal_crc_ex.c|stm32l0xx_hal_firewall.c|stm32l0xx_hal_rng.c|stm32l0xx_ll_dac.c|stm32l0xx_hal_msp_template.c|stm32l0xx_ll_spi.c|stm32l0xx_hal_usart.c|stm32l0xx_ll_utils.c|stm32l0xx_hal_smartcard.c|stm32l0xx_hal_dac_ex.c|stm32l0xx_hal_i2s.c|stm32l0xx_ll_gpio.c|stm32l0xx_hal_cryp_ex.c|stm32l0xx_hal_smartcard_ex.c|stm32l0xx_ll_tim.c|stm32l0xx_ll_comp.c|stm32l0xx_hal_pcd_ex.c|stm32l0xx_ll_dma.c|stm32l0xx_hal_wwdg.c|stm32l0xx_ll_lpuart.c|stm32l0xx_hal_smbus.c|stm32l0xx_ll_crc.c|stm32l0xx_hal_comp_ex.c|stm32l0xx_ll_crs.c|stm32l0xx_ll_exti.c|stm32l0xx_ll_lptim.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers_linked/STM32L0xx_HAL_Driver/Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Middlewares_linked/Third_Party/LoRaWAN/Utilities"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Startup"/>
 					</sourceEntries>

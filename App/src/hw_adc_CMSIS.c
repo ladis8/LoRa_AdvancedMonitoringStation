@@ -6,9 +6,10 @@
  */
 
 #include "hw_adc_CMSIS.h"
+
+
 void HW_ADC_Init(){
 
-/* Switch on the clock for the ADC1 peripheral */
 	//RCC->AHBENR |= RCC_AHBENR_ADC12EN;
 	RCC-> APB2ENR |= RCC_APB2ENR_ADCEN;
 	/* Select the APB prescaled by 2 as the clock source for the ADC */
@@ -49,6 +50,7 @@ void HW_ADC_Init(){
 }
 
 void HW_ADC_IoInit(){
+
 	//Define analog input pin
 	RCC->IOPENR |= RCC_IOPENR_GPIOAEN;
 	GPIOA->MODER &= ~GPIO_MODER_MODE0;

@@ -184,6 +184,15 @@ void USARTx_DMA_TX_IRQHandler( void )
 {
   vcom_DMA_TX_IRQHandler();
 }
+/**
+* @brief  This function handles DMA1_Channel1_IRQHandler interrupt request.
+* @param  None
+* @retval None
+*/
+void DMA1_Channel1_IRQHandler(void)
+{
+  ADC_DMA_IRQHandler();
+}
 
 void RTC_IRQHandler( void )
 {

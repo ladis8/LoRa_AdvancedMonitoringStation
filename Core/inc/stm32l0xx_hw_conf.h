@@ -5,6 +5,16 @@
  extern "C" {
 #endif
 
+//USED PINS
+ //LoRa Shield SPI PA0, PA7, PA6, PA5, PB6, PA10
+ //LoRa Shield DIO PA10, PB3, PB4, PB5
+ //LoRa Shield Antenna PC1
+ //ADC PA4
+ //USART PA2, PA3
+ //I2C PB8,PB9
+ //PWM PA1
+
+
 
 //LORA I/O definition
 #define RADIO_RESET_PORT                          GPIOA
@@ -57,13 +67,35 @@
 
 #define SPI1_AF                          GPIO_AF0_SPI1  
 
-/* ADC MACRO redefinition */
 
-#ifdef USE_STM32L0XX_NUCLEO
-#define ADC_READ_CHANNEL                 ADC_CHANNEL_4
-#define ADCCLK_ENABLE()                 __HAL_RCC_ADC1_CLK_ENABLE() ;
-#define ADCCLK_DISABLE()                __HAL_RCC_ADC1_CLK_DISABLE() ;
-#endif
+// ADC definitions
+#define ADCx									ADC1
+#define ADC_PIN									GPIO_PIN_4
+#define ADC_GPIOPORT							GPIOA
+#define ADC_READ_CHANNEL                 		ADC_CHANNEL_4	//pin PA4
+#define ADC_CLK_ENABLE()                 		__HAL_RCC_ADC1_CLK_ENABLE()
+#define ADC_CLK_DISABLE()                		__HAL_RCC_ADC1_CLK_DISABLE()
+#define ADC_GPIO_CLK_ENABLE()					  __GPIOA_CLK_ENABLE()
+#define ADC_SAMPLES								1024
+
+#define ADC_DMA_CHANNEL             			DMA1_Channel1
+#define ADC_DMA_REQUEST             			DMA_REQUEST_0
+
+ /* Definition for USARTx's NVIC */
+ #define ADC_DMA_IRQn                			DMA1_Channel1_IRQn
+
+ #define USARTx_Priority 0
+ #define USARTx_DMA_Priority 0
+
+
+//PWM definitions
+#define PWM										TIM2
+#define PWM_PIN									GPIO_PIN_1
+#define PWM_GPIOPORT							GPIOA
+#define PWM_GPIO_CLK_ENABLE()					__GPIOA_CLK_ENABLE()
+#define PWM_AF									GPIO_AF2_TIM2
+
+
 
 
 /* --------------------------- RTC HW definition -------------------------------- */
@@ -71,6 +103,8 @@
 #define RTC_OUTPUT       DBG_RTC_OUTPUT
 
 #define RTC_Alarm_IRQn              RTC_IRQn
+
+
 /* --------------------------- USART HW definition -------------------------------*/
 #define USARTx                           USART2
 #define USARTx_CLK_ENABLE()              __USART2_CLK_ENABLE();
@@ -105,6 +139,9 @@
 
 #define USARTx_Priority 0
 #define USARTx_DMA_Priority 0
+
+
+
 
 #define LED_Toggle( x )
 #define LED_On( x )
