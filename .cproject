@@ -98,7 +98,7 @@
 								<option id="com.atollic.truestudio.common_options.target.instr_set.394630803" name="Instruction set" superClass="com.atollic.truestudio.common_options.target.instr_set" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.instr_set.thumb2" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.fpu.1085392256" name="Floating point" superClass="com.atollic.truestudio.common_options.target.fpu" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.fpu.soft" valueType="enumerated"/>
 								<option id="com.atollic.truestudio.common_options.target.fpucore.30362102" name="FPU" superClass="com.atollic.truestudio.common_options.target.fpucore" useByScannerDiscovery="false" value="com.atollic.truestudio.common_options.target.fpucore.None" valueType="enumerated"/>
-								<option id="com.atollic.truestudio.as.symbols.defined.137050626" name="Defined symbols" superClass="com.atollic.truestudio.as.symbols.defined" valueType="definedSymbols"/>
+								<option id="com.atollic.truestudio.as.symbols.defined.137050626" name="Defined symbols" superClass="com.atollic.truestudio.as.symbols.defined"/>
 								<inputType id="com.atollic.truestudio.as.input.1213086573" name="Input" superClass="com.atollic.truestudio.as.input"/>
 							</tool>
 							<tool id="com.atollic.truestudio.exe.debug.toolchain.gcc.2030724841" name="C Compiler" superClass="com.atollic.truestudio.exe.debug.toolchain.gcc">
@@ -172,8 +172,26 @@
 							<tool id="com.atollic.truestudio.exe.debug.toolchain.secoutput.1416020413" name="Other" superClass="com.atollic.truestudio.exe.debug.toolchain.secoutput"/>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="com.atollic.truestudio.exe.debug.1253694904.507192499" name="/" resourcePath="App/src">
+						<toolChain id="com.atollic.truestudio.exe.debug.toolchain.2081269741" name="Atollic ARM Tools" superClass="com.atollic.truestudio.exe.debug.toolchain" unusedChildren="">
+							<option id="com.atollic.truestudio.general.runtimelib.1780584776.1772800272" name="Runtime Library" superClass="com.atollic.truestudio.general.runtimelib.1780584776"/>
+							<option id="com.atollic.truestudio.toolchain_options.mcu.1949931439.1999554436" name="Microcontroller" superClass="com.atollic.truestudio.toolchain_options.mcu.1949931439"/>
+							<option id="com.atollic.truestudio.toolchain_options.vendor.600581118.298027311" name="Vendor name" superClass="com.atollic.truestudio.toolchain_options.vendor.600581118"/>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.as.110079274" name="Assembler" superClass="com.atollic.truestudio.exe.debug.toolchain.as.732999922">
+								<inputType id="com.atollic.truestudio.as.input.207706528" name="Input" superClass="com.atollic.truestudio.as.input"/>
+							</tool>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.gcc.1337427243" name="C Compiler" superClass="com.atollic.truestudio.exe.debug.toolchain.gcc.2030724841">
+								<inputType id="com.atollic.truestudio.gcc.input.529717588" superClass="com.atollic.truestudio.gcc.input"/>
+							</tool>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.ld.103510180" name="C Linker" superClass="com.atollic.truestudio.exe.debug.toolchain.ld.1056738280"/>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.gpp.20642361" name="C++ Compiler" superClass="com.atollic.truestudio.exe.debug.toolchain.gpp.840039384"/>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.ldcc.710354817" name="C++ Linker" superClass="com.atollic.truestudio.exe.debug.toolchain.ldcc.855561305"/>
+							<tool id="com.atollic.truestudio.ar.base.985996224" name="Archiver" superClass="com.atollic.truestudio.ar.base.1430970256"/>
+							<tool id="com.atollic.truestudio.exe.debug.toolchain.secoutput.365544897" name="Other" superClass="com.atollic.truestudio.exe.debug.toolchain.secoutput.1416020413"/>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
-						<entry excluding="main_old.c|hw_adc_CMSIS.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="App/src"/>
+						<entry excluding="main_old.c|hw_adc_CMSIS.c|radionet_cmd_api.c" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="App/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Core/src"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers/DSP_lib"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Drivers_linked/BSP/STM32L0xx_Nucleo"/>
@@ -201,11 +219,11 @@
 		<!--scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.$(RELEASE_CONFIG_UID);fr.ac6.managedbuild.config.gnu.cross.exe.release.$(RELEASE_CONFIG_UID).;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.$(RELEASE_TOOL_COMPILER_UID);cdt.managedbuild.tool.gnu.c.compiler.input.$(RELEASE_TOOL_COMPILER_INPUT_UID)">
 			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo--><autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.692095767;fr.ac6.managedbuild.config.gnu.cross.exe.debug.692095767.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1644070172;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1989286657">
-			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.1253694904;com.atollic.truestudio.exe.debug.1253694904.;com.atollic.truestudio.exe.debug.toolchain.gcc.2030724841;com.atollic.truestudio.gcc.input.870767246">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.atollic.truestudio.mbs.ARMToolsPerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.692095767;fr.ac6.managedbuild.config.gnu.cross.exe.debug.692095767.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1644070172;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1989286657">
+			<autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>

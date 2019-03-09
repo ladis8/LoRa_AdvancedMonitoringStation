@@ -16,9 +16,10 @@
 #include "sensor_tmp75.h"
 
 
+#include "app_protocol.h"
+
 
 //TODO:
-//create format of message
 //connect ADXL1001
 //FFT
 
@@ -58,9 +59,16 @@ typedef enum
     TX_TIMEOUT,
 }States_t;
 
+typedef struct{
+
+
+}loraNode_t;
+
+
 #define RX_TIMEOUT_VALUE           5000
 #define BUFFER_SIZE                  32 // Define the payload size here
 #define LED_PERIOD_MS               200
+
 
 #define LEDS_OFF   do{ \
                    LED_Off( LED_BLUE ) ;   \
@@ -75,25 +83,39 @@ uint16_t BufferSize = BUFFER_SIZE;
 uint8_t Buffer[BUFFER_SIZE];
 uint8_t fftBuffer[256];
 
-States_t State = LOWPOWER;
+States_t State;;
 
 int8_t RssiValue = 0;
 int8_t SnrValue = 0;
+
+bool joinPending = false;
+bool nodeJoined = false;
+uint8_t id = 0x08;
+int seqnum;
+int numChunks;
+
 
  /* Led Timers objects*/
 static  TimerEvent_t timerLed;
 static RadioEvents_t RadioEvents;
 
 
+
+
+
 void OnTxDone( void );
+void FFT_OnTxDone(void);
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr );
 void OnTxTimeout( void );
 void OnRxTimeout( void );
 void OnRxError( void );
-
 static void OnledEvent( void* context );
 
-void SendStatusInfo(int counter);
+void sendStatusInfo();
+void sendJoinRequest();
+void calculateFFT();
+
+void gwPacketHandler(radioprot_gw_packet_t *packet, uint8_t rssi);
 
 
 
@@ -149,12 +171,14 @@ void PWM_Init(void)
 
 }
 
+
+
 void sendFFTOutput(float32_t *fftOutput, uint8_t *fftBuf, int fftBufferSize){
 	for (int i=0; i < 32; i++){
 		memcpy((void*)fftBuf, (void*)fftOutput + fftBufferSize * i, fftBufferSize);
 		Radio.Send(fftBuffer, fftBufferSize);
 		PRINTF("Packet with id %d was successfully sent\r\n", i);
-		HAL_Delay(5000);
+		//HAL_Delay(5000);
 	}
 }
 void sendADCReadings(uint16_t *adcReadings, uint8_t *fftBuf, int fftBufferSize){
@@ -169,10 +193,7 @@ void sendADCReadings(uint16_t *adcReadings, uint8_t *fftBuf, int fftBufferSize){
 }
 
 
-int main( void )
-{
-    bool isMaster = true;
-
+int main( void ){
 
     HAL_Init( );
 
@@ -187,41 +208,7 @@ int main( void )
     //1ADC cycle is
     HW_ADC_Read_Continuous(ADCReadings, 1024);
     HAL_Delay(1000);
-
-
-
-
-    arm_status status = ARM_MATH_SUCCESS;
-    float32_t maxValue;
-
-
-     /* Process the data through the CFFT/CIFFT module */
-    //arm_cfft_f32(&arm_cfft_sR_f32_len1024, testInput_f32_10khz, ifftFlag, doBitReverse);
-
-      /* Process the data through the Complex Magnitude Module for
-      calculating the magnitude at each bin */
-    //arm_cmplx_mag_f32(testInput_f32_10khz, testOutput, fftSize);
-
-      /* Calculates maxValue and returns corresponding BIN value */
-    //arm_max_f32(testOutput, fftSize, &maxValue, &testIndex);
-
-    //if(testIndex !=  refIndex)
-        //status = ARM_MATH_TEST_FAILURE;
-
-    //PRINTF("Test index is %d\n", testIndex);
-
-    for (int i=0; i < 1024; i++){
-    		testInput[2*i] = ((float32_t)ADCReadings[i])/4095 * 3.3;
-    		testInput[2*i +1] = 0;
-    }
-
-
-    arm_cfft_f32(&arm_cfft_sR_f32_len1024, testInput, ifftFlag, doBitReverse);
-    arm_cmplx_mag_f32(testInput, testOutput, fftSize);
-    arm_max_f32(testOutput, fftSize, &maxValue, &testIndex);
-    PRINTF("Test index is %d\n", testIndex);
-
-
+    calculateFFT();
 
     /*PRINTF("SETUP AND TEST...\r\n");
     bool i2cStatus = scanI2C1();
@@ -229,10 +216,6 @@ int main( void )
      	PRINTF("Temperature sensor detected...\r\n");
 
     TMP75_Init();
-
-
-
-
 
 
     int cnt = 0;
@@ -279,24 +262,27 @@ int main( void )
                                    true, 0, 0, LORA_IQ_INVERSION_ON, 10000 );
 
 
-
-
-    /*Radio.SetRxConfig( MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
+    //TODO: Disable RX continuous for better power consumption
+    Radio.SetRxConfig( MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
                                    LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
                                    LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
                                    0, true, 0, 0, LORA_IQ_INVERSION_ON, true );
-                                   */
+
 
 
 
 
 
     int counter = 0;
-    Radio.Rx( RX_TIMEOUT_VALUE );
 
-    sendFFTOutput(testOutput, fftBuffer, 128);
-    sendADCReadings(ADCReadings, fftBuffer, 128);
-    while(1);
+    State = TX;
+    sendJoinRequest();
+    //HAL_Delay(3000);
+    State = RX;
+
+    //sendFFTOutput(testOutput, fftBuffer, 128);
+    //sendADCReadings(ADCReadings, fftBuffer, 128);
+    //while(1);
 
     PRINTF("Starting message loop...");
     while( 1 )
@@ -312,27 +298,20 @@ int main( void )
         case TX:
             // Indicates on a LED that we have sent a PING [Master]
             // Indicates on a LED that we have sent a PONG [Slave]
-            //GpioWrite( &Led2, GpioRead( &Led2 ) ^ 1 );
-            Radio.Rx( RX_TIMEOUT_VALUE );
+            //GpioWrite(&Led2, GpioRead( &Led2 ) ^ 1 );
+            //sendStatusInfo();
+
+            //Radio.Rx( RX_TIMEOUT_VALUE );
             State = LOWPOWER;
             break;
         case RX_TIMEOUT:
         case RX_ERROR:
-        	if( isMaster == true ){
-        		SendStatusInfo(counter);
-        	    counter++;
-        	}
-        	else
-        	{
-        		Radio.Rx( RX_TIMEOUT_VALUE );
-        	}
+        	//SendStatusInfo(counter);
+        	counter++;
+        	Radio.Rx( RX_TIMEOUT_VALUE );
         	State = LOWPOWER;
             break;
 
-        case TX_TIMEOUT:
-            Radio.Rx( RX_TIMEOUT_VALUE );
-            State = LOWPOWER;
-            break;
         case LOWPOWER:
         default:
             // Set low power
@@ -352,52 +331,201 @@ int main( void )
     }
 }
 
+void gwPacketHandler(radioprot_gw_packet_t *packet, uint8_t rssi){
 
-void SendStatusInfo(int counter){
+	PRINTF("DEBUG: ");
+	for (int i=0; i < 10; i++){
+		PRINTF("%d ", *(((uint8_t*)packet)+i));
+	}
+	PRINTF("\r\n");
 
+   switch(packet->hdr.cmd){
+
+   case RADIOPROT_CMD_JOINREPLY:{
+
+	   if (!joinPending)
+		  PRINTF("ERROR: No Join request was sent\r\n");
+
+	   else if (nodeJoined)
+		   PRINTF("WARNING: Node already joined\r\n");
+
+	   else if (!packet->join.result){
+		   PRINTF("ERROR: GW declined join request...\r\n");
+		   joinPending = false;
+		   sendJoinRequest();
+	   }
+	   else{
+		   joinPending = false;
+		   nodeJoined = true;
+		   //save sent parameters
+		   PRINTF("INFO: Join parameters: \r\n");
+		   PRINTF("bw: %u, sf %u, cr %u, statusInfoInt %u\r\n",
+				   packet->join.bw, packet->join.sf, packet->join.cr, packet->join.statusInterval);
+	   }
+   }
+   break;
+
+
+   case RADIOPROT_CMD_STATUS:{
+      sendStatusInfo();
+   }
+   break;
+
+   case RADIOPROT_CMD_SENSOR_DATA:{
+
+   }
+   break;
+
+   case RADIOPROT_CMD_DATA_CHUNKS:{
+	   if (!nodeJoined){
+		   PRINTF("ERROR: Node is not joined... !\r\n");
+		   return;
+	   }
+	   if (packet->chunk_req.type == RADIOPROT_CHUNK_TYPE_FFT){
+		   PRINTF("INFO: FFT spectrum requested to send...\r\n");
+		   seqnum = 0; numChunks = 32;
+		   RadioEvents.TxDone = FFT_OnTxDone;
+		   FFT_OnTxDone();
+		   State = TX;
+
+	   }
+
+
+   }
+   break;
+
+   default:
+      break;
+   }
+}
+
+void sendJoinRequest(){
+	radioprot_join_req_t req = {
+			.hdr.cmd = RADIOPROT_CMD_JOINREPLY << 4,
+			.hdr.id = id,
+			.time = 0x0f0e0d0c,
+			.fwver = 0x01,
+
+	};
+	joinPending = true;
+	Radio.Send((uint8_t*)&req, sizeof(req));
+	PRINTF("INFO: Sending join request... %d \r\n", sizeof(req));
+}
+
+
+
+void sendStatusInfo(){
+
+	int counter = 0;
 	uint16_t temp = TMP75_GetTemperature();
 	PRINTF("Measured temperature is: %d\r\n", temp);
 
-	uint16_t adc = HW_ADC_ReadChannel(ADC_READ_CHANNEL);
+	//uint16_t adc = HW_ADC_ReadChannel(ADC_READ_CHANNEL);
+	uint16_t adc = 4095;
 	PRINTF("Measured ADC value is: %d \r\n", adc);
 
-	uint8_t battery = HW_GetBatteryLevel();
+	//uint8_t battery = HW_GetBatteryLevel();
+	uint16_t battery = 4095;
 	PRINTF("Measured battery level is: %d \r\n", battery);
 
 
 
-	PRINTF("Sending status info:\r\n");
+
 	memcpy((void*) Buffer, &temp, sizeof(uint16_t));
 	memcpy((void*) Buffer + sizeof(uint16_t), &adc, sizeof(uint16_t));
 	memcpy((void*) Buffer + 2 * sizeof(uint16_t), &battery, sizeof(uint8_t));
 	snprintf((void*) Buffer + 5, BufferSize - 5, "Packet %d",counter);
 
-
-	Radio.Send( Buffer, BufferSize );
+	radioprot_sensor_data_t res = {
+				.hdr.cmd = RADIOPROT_CMD_SENSOR_DATA << 4,
+				.hdr.id = id,
+				.type = 0x01,
+				.seq =0xFF,
+				.nsamples = 1,
+				.temp = {
+					.timestamp = 0,
+					.value = temp,
+				},
+		};
+	PRINTF("Sending status info %d:\r\n", sizeof(res));
+	Radio.Send((uint8_t*)&res, sizeof(res));
 	PRINTF("Sent %d packet, status: temperature %d, adc %d, battery %d\r\n\n", counter, temp, adc, battery);
 
 }
 
 
+void calculateFFT(){
+    /* Process the data through the CFFT/CIFFT module */
+   //arm_status status = ARM_MATH_SUCCESS;
+   //arm_cfft_f32(&arm_cfft_sR_f32_len1024, testInput_f32_10khz, ifftFlag, doBitReverse);
+     /* Process the data through the Complex Magnitude Module for
+     calculating the magnitude at each bin */
+   //arm_cmplx_mag_f32(testInput_f32_10khz, testOutput, fftSize);
+     /* Calculates maxValue and returns corresponding BIN value */
+   //arm_max_f32(testOutput, fftSize, &maxValue, &testIndex);
+   //if(testIndex !=  refIndex)
+       //status = ARM_MATH_TEST_FAILURE;
+   //PRINTF("Test index is %d\n", testIndex);
+
+   for (int i=0; i < 1024; i++){
+   		testInput[2*i] = ((float32_t)ADCReadings[i])/4095 * 3.3;
+   		testInput[2*i +1] = 0;
+   }
+
+   float32_t maxValue;
+   arm_cfft_f32(&arm_cfft_sR_f32_len1024, testInput, ifftFlag, doBitReverse);
+   arm_cmplx_mag_f32(testInput, testOutput, fftSize);
+   arm_max_f32(testOutput, fftSize, &maxValue, &testIndex);
+   PRINTF("FFT calculation - index with maximal amplitude is %d\n\r", testIndex);
+
+}
 
 void OnTxDone( void )
 {
-    Radio.Sleep( );
-    State = TX;
+    Radio.Sleep();
     PRINTF("OnTxDone\n\r");
+    State = RX;
 }
+
+void FFT_OnTxDone(void){
+	if (seqnum == numChunks){
+		PRINTF("FFT spectrum sent...\r\n");
+		RadioEvents.TxDone = OnTxDone;
+		State = RX;
+		return;
+	}
+	radioprot_chunk_data_t chunk = {
+		.hdr.cmd =  RADIOPROT_CMD_DATA_CHUNKS << 4,
+		.hdr.id = id,
+		.type = RADIOPROT_CHUNK_TYPE_FFT,
+		.seq = seqnum,
+		.nchunks = numChunks,
+		.timestamp = 0,
+	};
+	memcpy((uint8_t*)chunk.fft.fftChunk, (void*)testOutput + 128 * seqnum, 128);
+	Radio.Send((uint8_t*)&chunk, sizeof(chunk));
+	seqnum++;
+	PRINTF("FFT Packet with id %d was prepared for sending...\r\n", seqnum);
+}
+
+
 
 void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
 {
-    Radio.Sleep( );
+    Radio.Sleep();
     BufferSize = size;
     memcpy( Buffer, payload, BufferSize );
     RssiValue = rssi;
     SnrValue = snr;
     State = RX;
 
-    PRINTF("OnRxDone\n\r");
-    PRINTF("RssiValue=%d dBm, SnrValue=%d\n\r", rssi, snr);
+    PRINTF("OnRxDone: ");
+    PRINTF("RssiValue=%d dBm, SnrValue=%d, bytes received=%d\n\r", rssi, snr, size);
+    PRINTF("%s\r\n", payload);
+    gwPacketHandler((radioprot_gw_packet_t*)payload, rssi);
+
+
+
 }
 
 void OnTxTimeout( void )
@@ -413,6 +541,10 @@ void OnRxTimeout( void )
     Radio.Sleep( );
     State = RX_TIMEOUT;
     PRINTF("OnRxTimeout\n\r");
+    if (joinPending){
+    	State = TX;
+    	//Radio.Send();
+    }
 }
 
 void OnRxError( void )
