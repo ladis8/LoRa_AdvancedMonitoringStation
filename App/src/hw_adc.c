@@ -12,6 +12,14 @@ static bool adcInit = false;
 static ADC_HandleTypeDef hadc;
 static DMA_HandleTypeDef hdma_adc;
 
+
+ __IO ITStatus ADCDMAFinished = RESET;
+
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc){
+	ADCDMAFinished = SET;
+}
+
+
 void ADC_DMA_IRQHandler(){
 	HAL_DMA_IRQHandler(hadc.DMA_Handle);
 }
@@ -146,12 +154,17 @@ void HW_ADC_Read_Continuous(uint16_t* ADCReadings, uint32_t ADCReadingsLength)
 	    if (HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED) != HAL_OK)
 	    	Error_Handler();
 
+	    ADCDMAFinished = RESET;
 	    HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADCReadings, ADCReadingsLength);
 
 	}
 	 else {
 		  PRINTF("ERROR: ADC has not been initialized yet!\r\n");
 	  }
+}
+
+bool isConversionFinished(){
+	return (ADCDMAFinished == SET)? true: false;
 }
 
 

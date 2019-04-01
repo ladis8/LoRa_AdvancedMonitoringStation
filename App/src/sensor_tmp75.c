@@ -37,3 +37,7 @@ uint16_t TMP75_GetTemperature(){
 	uint16_t temp_shifted = (((tempBuff[0] << 8) | tempBuff[1]) >> 4);
 	return temp_shifted;
 }
+float32_t TMP75_GetTemperatureFloat(){
+	//return TMP75_GetTemperature() * calibrationConstant;
+	return TMP75_GetTemperature() * 0.0625;
+}

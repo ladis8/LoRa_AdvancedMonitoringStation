@@ -8,6 +8,7 @@
 #ifndef _HW_ADC_H_
 #define _HW_ADC_H_
 
+#include <stdbool.h>
 #include "hw.h"
 #include "utilities.h"
 
@@ -31,5 +32,6 @@ void HW_ADC_Read_Continuous(uint16_t* ADCReadings, uint32_t ADCReadingsLength);
  */
 uint8_t HW_GetBatteryLevel(void);
 
+bool isConversionFinished();
 
 #endif

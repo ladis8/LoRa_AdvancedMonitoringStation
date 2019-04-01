@@ -29,39 +29,60 @@ typedef struct
 {
    uint8_t cmd;
    uint8_t id;
-
 } __PACKED__ radioprot_header_t;
 
 
 typedef struct
 {
    radioprot_header_t hdr;
-   uint32_t time;
+   uint32_t time;				//sync purposes
    uint8_t fwver;
 
 } __PACKED__ radioprot_join_req_t;
 
 
+/* GW  -- > Node packet JOIN RESPONSE */
 typedef struct
 {
-   uint8_t result;
-   uint8_t bw;
-   uint8_t sf;
-   uint8_t cr;
+   uint8_t 	result;
+   uint8_t 	bw;
+   uint8_t 	sf;
+   uint8_t 	cr;
    uint16_t joinInterval;
-   uint16_t statusInterval;
+   uint8_t 	appMode;
+   union{
+	   struct __PACKED__ {
+		   uint8_t garbage[8];
+	   }cmd_app;
+
+	   struct __PACKED__ {
+		   uint16_t statusinfoInterval;
+		   uint8_t  rmsAveragingNum;
+		   uint8_t  tempAveragingNum;
+		   uint8_t  fftSamples;
+		   uint8_t  adcTimings;
+		   uint8_t  adcClockDivider;
+		   uint8_t  fftPeaksNum;
+
+	   }status_app;
+
+   };
 
 } __PACKED__ radioprot_join_res_t;
 
 
-
-typedef struct
-{
-} __PACKED__ radioprot_status_info_req_t;
-
+/* NODE -->  GW packet STATUS INFO */
+//TODO: make peaks dynamic
 typedef struct
 {
 	radioprot_header_t hdr;
+
+	uint8_t   battery;
+	float32_t rms;
+	float32_t temperature;
+	uint8_t   fftPeaksNum;
+	uint16_t  fftPeaksIndexes[5];
+
 } __PACKED__ radioprot_status_info_t;
 
 
@@ -183,7 +204,7 @@ typedef struct
       radioprot_join_req_t           join_req;
       radioprot_sensor_data_t        sensor_data;
       radioprot_chunk_data_t         chunk_data;
-      radioprot_status_info_t        status_info;
+      radioprot_status_info_t        statusinfo;
    };
 
 } __PACKED__ radioprot_node_packet_t;
@@ -198,7 +219,6 @@ typedef struct
       radioprot_join_res_t            join;
       radioprot_sensor_data_req_t     sensor_req;
       radioprot_chunk_data_req_t      chunk_req;
-      radioprot_status_info_req_t     status_info_req;
 
    };
 
