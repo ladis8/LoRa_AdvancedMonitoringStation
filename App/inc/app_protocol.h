@@ -28,17 +28,41 @@ typedef enum
 typedef struct
 {
    uint8_t cmd;
-   uint8_t id;
+   uint8_t sId;
 } __PACKED__ radioprot_header_t;
 
 
+
+
+/* Node  -- > GW packet JOIN REQUEST */
 typedef struct
 {
    radioprot_header_t hdr;
+   uint32_t uId;
    uint32_t time;				//sync purposes
    uint8_t fwver;
 
 } __PACKED__ radioprot_join_req_t;
+
+
+
+/* NODE -->  GW packet STATUS INFO */
+//TODO: make peaks dynamic
+typedef struct
+{
+	radioprot_header_t hdr;
+
+	uint8_t   battery;
+	float32_t rms;
+	float32_t temperature;
+	uint8_t   fftPeaksNum;
+	uint16_t  fftPeaksIndexes[5];
+
+} __PACKED__ radioprot_status_info_t;
+
+
+
+
 
 
 /* GW  -- > Node packet JOIN RESPONSE */
@@ -59,8 +83,8 @@ typedef struct
 		   uint16_t statusinfoInterval;
 		   uint8_t  rmsAveragingNum;
 		   uint8_t  tempAveragingNum;
-		   uint8_t  fftSamples;
-		   uint8_t  adcTimings;
+		   uint8_t  fftSamplesNum;
+		   uint8_t  adcSamplingTime;
 		   uint8_t  adcClockDivider;
 		   uint8_t  fftPeaksNum;
 
@@ -70,20 +94,6 @@ typedef struct
 
 } __PACKED__ radioprot_join_res_t;
 
-
-/* NODE -->  GW packet STATUS INFO */
-//TODO: make peaks dynamic
-typedef struct
-{
-	radioprot_header_t hdr;
-
-	uint8_t   battery;
-	float32_t rms;
-	float32_t temperature;
-	uint8_t   fftPeaksNum;
-	uint16_t  fftPeaksIndexes[5];
-
-} __PACKED__ radioprot_status_info_t;
 
 
 typedef struct

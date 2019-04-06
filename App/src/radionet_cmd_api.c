@@ -7,8 +7,8 @@
 bool joinReplyCallback(radioprot_gw_packet_t *packet){
 
 
-	PRINTF("INFO: Received JOINREPLY, new seassion id %d, running mode %d \r\n", packet->hdr.id, packet->join.appMode);
-	loraNode_cfg.radionet.sId = packet->hdr.id;
+	PRINTF("INFO: Received JOINREPLY, new session id %d, running mode %d \r\n", packet->hdr.sId, packet->join.appMode);
+	loraNode_cfg.radionet.sId = packet->hdr.sId;
 	APPLICATION_MODE = packet-> join.appMode;
 
 	/* Save sent LoRa parameters */
@@ -22,9 +22,9 @@ bool joinReplyCallback(radioprot_gw_packet_t *packet){
 		loraNode_cfg.radionet.joinInterval = packet-> join.joinInterval;
 		loraNode_cfg.radionet.statusinfoInterval = packet-> join.status_app.statusinfoInterval;
 
-		loraNode_cfg.adc_fft.fftSamples = packet-> join.status_app.fftSamples;
+		loraNode_cfg.adc_fft.fftSamplesNum = packet-> join.status_app.fftSamplesNum;
 		loraNode_cfg.adc_fft.adcClockDivider = packet-> join.status_app.adcClockDivider;
-		loraNode_cfg.adc_fft.adcTimings = packet-> join.status_app.adcTimings;
+		loraNode_cfg.adc_fft.adcSamplingTime = packet-> join.status_app.adcSamplingTime;
 		loraNode_cfg.adc_fft.fftPeaksNum = packet-> join.status_app.fftPeaksNum;
 
 		loraNode_cfg.adc_fft.rmsAveragingNum = packet-> join.status_app.rmsAveragingNum;

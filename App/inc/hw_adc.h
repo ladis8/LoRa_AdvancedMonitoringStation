@@ -9,16 +9,18 @@
 #define _HW_ADC_H_
 
 #include <stdbool.h>
-#include "hw.h"
-#include "utilities.h"
+#include <stdint.h>
+
+
 
 #define VREFINT_CAL       ((uint16_t*) ((uint32_t) 0x1FF80078))
 #define LORAWAN_MAX_BAT   254
 
 void ADC_DMA_IRQHandler(void);
 
-void HW_ADC_Init( void );
-void HW_ADC_Init_Con( void );
+
+void HW_ADC_Init();
+void HW_ADC_Init_Con();
 
 void HW_ADC_DeInit( void );
 

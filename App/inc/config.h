@@ -12,8 +12,12 @@
 
 
  /* DEFAULT RADIONET SETTINGS*/
-#define CFG_INITIAL_SID 0x00						//0x00 is for new join
-#define CFG_JOIN_INTERVAL 10000
+#define CFG_INITIAL_SID 			0x00						//0x00 is for new join
+#define CFG_UID						(*(uint32_t *)0x1FF80050U)
+#define CFG_JOIN_INTERVAL 			15000
+
+//#define CFG_UID						(*(uint32_t *)0x1FF80050U) //Unique device ID register base address
+
 
 
 /* DEFAULT SETTING FOR LORA MODULE */
@@ -36,8 +40,10 @@
 #define CFG_LORA_IQ_INVERSION_ON                        false
 
 
-#define CFG_RX_TIMEOUT          						5000
+#define CFG_RX_TIMEOUT          						10000
 #define CFG_TX_TIMEOUT									10000 //not used
+
+
 
 /* DEFAULT SETTING FOR LORA MODULE */
 
@@ -45,14 +51,17 @@
  /* DEFAULT SETTING FOR FFT ADC */
  //TODO: check bit reverse and ifft
  //TODO: find more logical order
-#define CFG_FFT_SAMPLES 1024
+#define CFG_FFT_SAMPLES_NUM   	N_1024
+#define CFG_FFT_PEAKS_NUM 		5
 
-#define CFG_ADC_CLOCK_DIVIDER 2
-#define CFG_ADC_SAMPLING_TIME 160
+#define CFG_ADC_CLOCK_DIVIDER 	ASYNC_DIV2
+#define CFG_ADC_SAMPLING_TIME 	S_160CYCLE5
+
+#define CFG_FWVER 0x01
 
 
 
-
+/* RADIO STATES for state machine*/
  typedef enum{
      LOWPOWER,
      RX,
@@ -60,13 +69,61 @@
      RX_ERROR,
      TX,
      TX_TIMEOUT,
+
  } radioState_t;
 
 
+ /* FFT && CONFIGURABLE PROPERTIES */
+ typedef enum{
+	 N_64,
+	 N_128,
+	 N_512,
+	 N_1024,
+	 N_2048
+
+ }fftSamplesNum_t;
+
+
+
+ typedef enum{
+	 S_1CYCLE5,
+	 S_3CYCLE5,
+	 S_7CYCLE5,
+	 S_12CYCLE5,
+	 S_19CYCLE5,
+	 S_39CYCLE5,
+	 S_79CYCLE5,
+	 S_160CYCLE5,
+
+ }adcSamplingTime_t;
+
+
+
+ typedef enum{
+	 ASYNC_DIV1,
+	 ASYNC_DIV2,
+	 ASYNC_DIV4,
+	 ASYNC_DIV8,
+	 ASYNC_DIV16,
+	 ASYNC_DIV32,
+	 ASYNC_DIV64,
+	 ASYNC_DIV128,
+	 ASYNC_DIV256
+
+ }adcDivider_t;
+
+
+
+
+
+ /* ALL CONFIGURATIONS */
  typedef struct{
 
+	 uint8_t fwver;
+
     struct{
-       uint8_t sId; // Session ID
+       uint8_t sId; 		    // Session ID
+       uint32_t uId; 		    //Unique ID of device == MAC (but only first 32 bit)
        bool joinPending;
        bool nodeJoined;
        radioState_t state;
@@ -89,10 +146,10 @@
 		uint8_t ifftFlag;
 		uint8_t doBitReverse;
 
-		uint16_t fftSamples;
-		uint16_t adcClockDivider;
-		uint8_t	adcTimings;
+		uint8_t fftSamplesNum;
 		uint8_t fftPeaksNum;
+		uint8_t adcClockDivider;
+		uint8_t	adcSamplingTime;
 		uint8_t tempAveragingNum;
 		uint8_t rmsAveragingNum;
 
@@ -134,6 +191,8 @@
 
 
 void printConfig();
+
+
 
 
 #endif

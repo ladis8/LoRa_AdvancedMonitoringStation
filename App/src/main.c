@@ -1,5 +1,6 @@
-#include "hw.h"
+
 #include "app.h"
+#include "hw.h"
 
 #include "radio.h"
 #include "timeServer.h"
@@ -17,6 +18,7 @@
 	//join - timesync
 	//join - joinInterval apply from config
 	//fft  - try real fft
+	//move fft to separate file
 
 #define DEBUG 1
 
@@ -154,7 +156,7 @@ uint16_t calculateMean(uint16_t *values, uint16_t length){
 //TODO: complete N samples in rpi
 void calculateRMS(uint16_t *ADCReadings, float32_t *rms, float32_t *rms_meanRemoved){
 
-	uint16_t N = loraNode_cfg.adc_fft.fftSamples;
+	uint16_t N = loraNode_cfg.adc_fft.fftSamplesNum;
 	N = 1024;
 
 	float32_t *voltageBuffer = (float32_t*) malloc(N * sizeof(float32_t));
@@ -186,8 +188,9 @@ void calculateFFT(uint16_t *ADCReadings,uint16_t *fftPeaksIndexes, uint8_t fftPe
    //if(testIndex !=  refIndex)
        //status = ARM_MATH_TEST_FAILURE;
    //PRINTF("Test index is %d\n", testIndex);
-	uint16_t N = loraNode_cfg.adc_fft.fftSamples;
-	N = 1024;
+	uint16_t configurableSamplesNum [] = {64, 128, 512, 1024, 2048};
+	uint16_t N = configurableSamplesNum[loraNode_cfg.adc_fft.fftSamplesNum];
+
 
 	float32_t *fftBuffer = (float32_t*) malloc(N * 2 * sizeof(float32_t));
 
@@ -198,7 +201,17 @@ void calculateFFT(uint16_t *ADCReadings,uint16_t *fftPeaksIndexes, uint8_t fftPe
 
 	float32_t maxValue;
 	uint32_t maxIndex;
-	arm_cfft_f32(&arm_cfft_sR_f32_len1024, fftBuffer, loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
+	const arm_cfft_instance_f32 *cfftInstance;
+
+	switch (N){
+		case 64: 	cfftInstance = &arm_cfft_sR_f32_len64; break;
+		case 128: 	cfftInstance = &arm_cfft_sR_f32_len128; break;
+		case 512: 	cfftInstance = &arm_cfft_sR_f32_len512; break;
+		case 1024: 	cfftInstance = &arm_cfft_sR_f32_len1024; break;
+		case 2048: 	cfftInstance = &arm_cfft_sR_f32_len2048; break;
+		default: 	cfftInstance =&arm_cfft_sR_f32_len1024;
+	}
+	arm_cfft_f32(cfftInstance, fftBuffer, loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
 	//arm_rfft_f32(&arm_cfft_sR_f32_len1024, testInput, loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
 	arm_cmplx_mag_f32(fftBuffer, fftBuffer, N);
    	arm_max_f32(fftBuffer, N, &maxValue, &maxIndex);
@@ -208,7 +221,7 @@ void calculateFFT(uint16_t *ADCReadings,uint16_t *fftPeaksIndexes, uint8_t fftPe
 	   fftPeaksIndexes[i] = maxIndex;
 
     free(fftBuffer);
-    PRINTF("DEBUG: FFT calculation - index with maximal amplitude: %d is and maximum value: %.3f\n\r", maxIndex, maxValue);
+    PRINTF("DEBUG: FFT calculation for N %u- index with maximal amplitude: %d is and maximum value: %.3f\n\r", N, maxIndex, maxValue);
 
 }
 
@@ -219,6 +232,7 @@ int radioNetErrors = 0;
 
 int main( void ){
 
+
     HAL_Init( );
 
     //differs
@@ -226,7 +240,6 @@ int main( void ){
 
     PWM_Init();
     HW_Init( );
-    HW_ADC_Init();
     radioConfigure();
 
     /* Initialize timers */
@@ -248,7 +261,7 @@ int main( void ){
 
 
     int counter = 0;
-    PRINTF("Starting message loop...\r\n	");
+    PRINTF("Starting message loop...\r\n");
 
     //send join request at first
     loraNode_cfg.radionet.state = TX;
@@ -318,11 +331,16 @@ int main( void ){
 
 
 void sendJoinRequest(){
+	//TODO: create config init method
+	//set uid to cfg structure
+	loraNode_cfg.radionet.uId = CFG_UID;
+
 	radioprot_join_req_t joinRequestPacket = {
 			.hdr.cmd = RADIOPROT_CMD_JOINREPLY << 4,
-			.hdr.id = loraNode_cfg.radionet.sId,
+			.hdr.sId = loraNode_cfg.radionet.sId,
+			.uId = loraNode_cfg.radionet.uId,
 			.time = 0x0f0e0d0c,
-			.fwver = 0x01,
+			.fwver = loraNode_cfg.fwver
 
 	};
 	loraNode_cfg.radionet.joinPending = true;
@@ -359,7 +377,7 @@ void sendStatusInfo(){
 	/* Send LoRa packet */
 	radioprot_status_info_t statusinfoPacket = {
 			.hdr.cmd = RADIOPROT_CMD_STATUS << 4,
-			.hdr.id = loraNode_cfg.radionet.sId,
+			.hdr.sId = loraNode_cfg.radionet.sId,
 			.battery = battery,
 			.rms = rmsAC,
 			.temperature = temperature,
@@ -367,7 +385,7 @@ void sendStatusInfo(){
 	};
 	memcpy((uint8_t*)statusinfoPacket.fftPeaksIndexes, (void*)fftPeaksIndexes,fftPeaksNum * sizeof(uint16_t));
 
-	PRINTF("INFO: Sending STATUS INFO packet (s. %u) temperature: %.3f, battery: %u, rms: %.3f\r\n\n", sizeof(statusinfoPacket), temperature, battery, rmsAC);
+	PRINTF("INFO: Sending STATUS INFO packet (s. %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(statusinfoPacket), temperature, battery, rmsAC);
 	Radio.Send((uint8_t*)&statusinfoPacket, sizeof(statusinfoPacket));
 }
 
@@ -376,7 +394,7 @@ void sendStatusInfo(){
 void OnTxDone( void )
 {
     Radio.Sleep();
-    PRINTF("OnTxDone\n\r");
+    PRINTF("OnTxDone\n\n\r");
     if (!loraNode_cfg.radionet.nodeJoined){
     		loraNode_cfg.radionet.joinPending = true;
     		loraNode_cfg.radionet.state = RX;
@@ -394,7 +412,7 @@ void OnTxDone( void )
 	}
 	radioprot_chunk_data_t chunk = {
 		.hdr.cmd =  RADIOPROT_CMD_DATA_CHUNKS << 4,
-		.hdr.id = loraNode_cfg.radionet.sId,
+		.hdr.sId = loraNode_cfg.radionet.sId,
 		.type = RADIOPROT_CHUNK_TYPE_FFT,
 		.seq = seqnum,
 		.nchunks = numChunks,

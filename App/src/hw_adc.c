@@ -8,9 +8,35 @@
 
 #include "hw_adc.h"
 
+#include "hw.h"
+#include "app.h"
+#include "utilities.h"
+
 static bool adcInit = false;
 static ADC_HandleTypeDef hadc;
 static DMA_HandleTypeDef hdma_adc;
+
+static uint32_t configurableSamplingTime[] = {
+		ADC_SAMPLETIME_1CYCLE_5,
+		ADC_SAMPLETIME_3CYCLES_5,
+		ADC_SAMPLETIME_7CYCLES_5,
+		ADC_SAMPLETIME_12CYCLES_5,
+		ADC_SAMPLETIME_19CYCLES_5,
+		ADC_SAMPLETIME_39CYCLES_5,
+		ADC_SAMPLETIME_79CYCLES_5,
+		ADC_SAMPLETIME_160CYCLES_5
+};
+static uint32_t configurableADCDivider[] = {
+		ADC_CLOCK_ASYNC_DIV1,
+		ADC_CLOCK_ASYNC_DIV2,
+		ADC_CLOCK_ASYNC_DIV4,
+		ADC_CLOCK_ASYNC_DIV8,
+		ADC_CLOCK_ASYNC_DIV16,
+		ADC_CLOCK_ASYNC_DIV32,
+		ADC_CLOCK_ASYNC_DIV64,
+		ADC_CLOCK_ASYNC_DIV128,
+		ADC_CLOCK_ASYNC_DIV256
+};
 
 
  __IO ITStatus ADCDMAFinished = RESET;
@@ -24,23 +50,23 @@ void ADC_DMA_IRQHandler(){
 	HAL_DMA_IRQHandler(hadc.DMA_Handle);
 }
 
-void HW_ADC_Init( void )
+void HW_ADC_Init()
 {
   if( adcInit == false )
   {
-    adcInit = true;
+	uint8_t samplingTimeIndex = loraNode_cfg.adc_fft.adcSamplingTime;
+	uint8_t dividerIndex = loraNode_cfg.adc_fft.adcClockDivider;
 
     hadc.Instance  = ADCx;
 
-    hadc.Init.OversamplingMode      = DISABLE;
+    hadc.Init.ClockPrescaler        = configurableADCDivider[dividerIndex];
+    hadc.Init.SamplingTime          = configurableSamplingTime[samplingTimeIndex];
 
-    hadc.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc.Init.OversamplingMode      = DISABLE;
     hadc.Init.LowPowerAutoPowerOff  = DISABLE;
     hadc.Init.LowPowerFrequencyMode = ENABLE;
     hadc.Init.LowPowerAutoWait      = DISABLE;
-
     hadc.Init.Resolution            = ADC_RESOLUTION_12B;
-    hadc.Init.SamplingTime          = ADC_SAMPLETIME_160CYCLES_5;
     hadc.Init.ScanConvMode          = ADC_SCAN_DIRECTION_FORWARD;
     hadc.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
     hadc.Init.ContinuousConvMode    = DISABLE;
@@ -52,23 +78,29 @@ void HW_ADC_Init( void )
     ADC_CLK_ENABLE();
 
     HAL_ADC_Init( &hadc );
+    adcInit = true;
 
   }
 }
 
-void HW_ADC_Init_Con (void)
+
+void HW_ADC_Init_Con()
 {
 	if( adcInit == false )
 	{
-		adcInit = true;
+		uint8_t samplingTimeIndex = loraNode_cfg.adc_fft.adcSamplingTime;
+		uint8_t dividerIndex = loraNode_cfg.adc_fft.adcClockDivider;
+
 		//sample time == [12.5 + 160.5] * 1/8 *10^(-6) == 21.625us
 		//fs === 46.242 kHz
 		//45.1582 Hz
 
 		hadc.Instance = ADCx;
-		hadc.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;		//8 Mhz clock
+
+		hadc.Init.ClockPrescaler        = configurableADCDivider[dividerIndex];
+		hadc.Init.SamplingTime          = configurableSamplingTime[samplingTimeIndex];
+
 		hadc.Init.Resolution 			= ADC_RESOLUTION_12B;
-		hadc.Init.SamplingTime          = ADC_SAMPLETIME_160CYCLES_5;
 		//hadc.Init.ScanConvMode          = ADC_SCAN_ENABLE;
 		hadc.Init.ScanConvMode 			= ADC_SCAN_DIRECTION_FORWARD; //Sequencer disabled (ADC conversion on only 1 channel
 		hadc.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;        //EOC flag picked-up to indicate conversion end
@@ -96,8 +128,7 @@ void HW_ADC_Init_Con (void)
 		adcConf.Rank = ADC_RANK_CHANNEL_NUMBER;
 		HAL_ADC_ConfigChannel( &hadc, &adcConf);
 
-
-
+		adcInit = true;
 	}
 
 }
