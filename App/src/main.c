@@ -7,7 +7,9 @@
 #include "low_power_manager.h"
 #include "vcom.h"
 
+
 #include "radionet_cmd_api.h"
+#include "dsp.h"
 
 
 //TODO: Questions
@@ -88,8 +90,8 @@ void PWM_Init(void)
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 	//set TIM2 prescaler to 1MHz clock
 	TIM2->PSC = 31;
-	//set TIM2 CNT overflow -- reset pin every 0.1 ms	== 10khz
-	TIM2->ARR = 100;
+	//set TIM2 CNT overflow -- reset pin every 1 ms	==> 0.5khz
+	TIM2->ARR = 1000;
 
 	//enable mux pins TIM2_CH2 and TIM2_CH3 in output compare mode
 	TIM2->CCER |= TIM_CCER_CC2E;
@@ -145,88 +147,6 @@ void radioConfigure(void){
 			true );
 }
 
-uint16_t calculateMean(uint16_t *values, uint16_t length){
-	uint32_t sum = 0;
-	for (int i = 0; i < length; i++){
-		sum += values[i];
-	}
-	return (uint16_t)(sum/length);
-}
-
-//TODO: complete N samples in rpi
-void calculateRMS(uint16_t *ADCReadings, float32_t *rms, float32_t *rms_meanRemoved){
-
-	uint16_t N = loraNode_cfg.adc_fft.fftSamplesNum;
-	N = 1024;
-
-	float32_t *voltageBuffer = (float32_t*) malloc(N * sizeof(float32_t));
-
-	uint16_t mean = calculateMean(ADCReadings,(uint32_t)N);
-
-
-	for (int i=0; i < N; i++){
-		voltageBuffer[i] = ((float32_t)ADCReadings[i])/4095 * 3.3;
-	}
-	arm_rms_f32(voltageBuffer, N, rms);
-
-	for (int i=0; i < N; i++){
-		voltageBuffer[i]  = ((float32_t)ADCReadings[i]-mean)/4095 * 3.3;
-	}
-	arm_rms_f32(voltageBuffer, N, rms_meanRemoved);
-	free(voltageBuffer);
-}
-
-void calculateFFT(uint16_t *ADCReadings,uint16_t *fftPeaksIndexes, uint8_t fftPeaksNum){
-    /* Process the data through the CFFT/CIFFT module */
-   //arm_status status = ARM_MATH_SUCCESS;
-   //arm_cfft_f32(&arm_cfft_sR_f32_len1024, testInput_f32_10khz, ifftFlag, doBitReverse);
-     /* Process the data through the Complex Magnitude Module for
-     calculating the magnitude at each bin */
-   //arm_cmplx_mag_f32(testInput_f32_10khz, testOutput, fftSize);
-     /* Calculates maxValue and returns corresponding BIN value */
-   //arm_max_f32(testOutput, fftSize, &maxValue, &testIndex);
-   //if(testIndex !=  refIndex)
-       //status = ARM_MATH_TEST_FAILURE;
-   //PRINTF("Test index is %d\n", testIndex);
-	uint16_t configurableSamplesNum [] = {64, 128, 512, 1024, 2048};
-	uint16_t N = configurableSamplesNum[loraNode_cfg.adc_fft.fftSamplesNum];
-
-
-	float32_t *fftBuffer = (float32_t*) malloc(N * 2 * sizeof(float32_t));
-
-	for (int i=0; i < N; i++){
-   		fftBuffer[2*i] = ((float32_t)ADCReadings[i])/4095 * 3.3;
-   		fftBuffer[2*i +1] = 0;
-	}
-
-	float32_t maxValue;
-	uint32_t maxIndex;
-	const arm_cfft_instance_f32 *cfftInstance;
-
-	switch (N){
-		case 64: 	cfftInstance = &arm_cfft_sR_f32_len64; break;
-		case 128: 	cfftInstance = &arm_cfft_sR_f32_len128; break;
-		case 512: 	cfftInstance = &arm_cfft_sR_f32_len512; break;
-		case 1024: 	cfftInstance = &arm_cfft_sR_f32_len1024; break;
-		case 2048: 	cfftInstance = &arm_cfft_sR_f32_len2048; break;
-		default: 	cfftInstance =&arm_cfft_sR_f32_len1024;
-	}
-	arm_cfft_f32(cfftInstance, fftBuffer, loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
-	//arm_rfft_f32(&arm_cfft_sR_f32_len1024, testInput, loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
-	arm_cmplx_mag_f32(fftBuffer, fftBuffer, N);
-   	arm_max_f32(fftBuffer, N, &maxValue, &maxIndex);
-
-    //TODO: select max indexes from fft
-    for (int i = 0; i < fftPeaksNum; i++)
-	   fftPeaksIndexes[i] = maxIndex;
-
-    free(fftBuffer);
-    PRINTF("DEBUG: FFT calculation for N %u- index with maximal amplitude: %d is and maximum value: %.3f\n\r", N, maxIndex, maxValue);
-
-}
-
-
-
 
 int radioNetErrors = 0;
 
@@ -240,16 +160,13 @@ int main( void ){
 
     PWM_Init();
     HW_Init( );
+    TMP75_Init();
     radioConfigure();
 
     /* Initialize timers */
     TimerInit(&timerStatus, OnStatusinfoTimerDone);
 
-
-
-
     //DBG_Init( );
-
 
     /*Disbale Stand-by mode*/
     //LPM_SetOffMode(LPM_APPLI_Id , LPM_Disable );
@@ -349,44 +266,77 @@ void sendJoinRequest(){
 }
 
 
+//TODO: delta
+//TODO: low power mode beside ADC???
 void sendStatusInfo(){
 
 	/* Measure temperature, battery level */
-	uint16_t ADCReadings[1024];
-
 	HW_ADC_Init();
 	uint8_t battery = HW_GetBatteryLevel();
 	HW_ADC_DeInit();
+
+
+	/* Sample acc signal by ADC */
+	uint16_t configurableSamplesNum [] = {64, 128, 512, 1024, 2048};
+	uint16_t N = configurableSamplesNum[loraNode_cfg.adc_fft.fftSamplesNum];
+
+	uint16_t signal[N];
+
 	HW_ADC_Init_Con();
-	HW_ADC_Read_Continuous(ADCReadings, 1024);
+	HW_ADC_Read_Continuous(signal, N);
+
 
 	float32_t temperature = TMP75_GetTemperatureFloat();
 	while (!isConversionFinished());
 
 	/* Start low power mode */
 	HW_ADC_DeInit();
-	//pass
+
 
 	/* Calculate signal processing */
 	uint8_t fftPeaksNum = loraNode_cfg.adc_fft.fftPeaksNum;
-	uint16_t fftPeaksIndexes [fftPeaksNum];
+	uint16_t fftPeaksIndexes[fftPeaksNum];
+	float32_t fftPeaksValues[fftPeaksNum];
 	float32_t rmsDC, rmsAC;
-	calculateRMS(ADCReadings, &rmsDC, &rmsAC);
-	calculateFFT(ADCReadings, fftPeaksIndexes, fftPeaksNum);
+
+		/* Calculate RMS */
+	calculateRMSofSignal(signal, N, &rmsDC, &rmsAC);
+	PRINTF("DEBUG: RMS calculation for N %u samples - DC %.3f AC %.3f\r\n", N, rmsDC, rmsAC);
+
+		/* Calculate FFT */
+	float32_t *fftBuffer = (float32_t*) malloc(N * 2 * sizeof(float32_t));
+	calculateFFT(signal, N, fftBuffer,loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
+
+		/* Extract Peaks */
+	PRINTF("DEBUG: FFT calculation for N %u samples, max indexes:\n\r", N);
+    findFFTPeaks(fftBuffer, N, fftPeaksValues, fftPeaksIndexes, fftPeaksNum, 3.0, 0);
+    for (int i=0; i < fftPeaksNum; i++)
+  	    PRINTF("    FFT peak: %f %u\r\n", fftPeaksValues[i], fftPeaksIndexes[i]);
+
+    free(fftBuffer);
+
 
 	/* Send LoRa packet */
-	radioprot_status_info_t statusinfoPacket = {
-			.hdr.cmd = RADIOPROT_CMD_STATUS << 4,
-			.hdr.sId = loraNode_cfg.radionet.sId,
-			.battery = battery,
-			.rms = rmsAC,
-			.temperature = temperature,
-			.fftPeaksNum = fftPeaksNum,
-	};
-	memcpy((uint8_t*)statusinfoPacket.fftPeaksIndexes, (void*)fftPeaksIndexes,fftPeaksNum * sizeof(uint16_t));
+    int packetSize = sizeof(radioprot_status_info_t) + (sizeof(uint16_t) + sizeof(float32_t)) * fftPeaksNum;
+	radioprot_status_info_t *statusinfoPacket = (radioprot_status_info_t*)malloc(packetSize);
+	statusinfoPacket->hdr.cmd = RADIOPROT_CMD_STATUS << 4;
+	statusinfoPacket->hdr.sId = loraNode_cfg.radionet.sId;
+	statusinfoPacket->battery = battery;
+	statusinfoPacket->rms = rmsAC;
+	statusinfoPacket->temperature = temperature;
+	statusinfoPacket->fftPeaksNum = fftPeaksNum;
 
-	PRINTF("INFO: Sending STATUS INFO packet (s. %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(statusinfoPacket), temperature, battery, rmsAC);
-	Radio.Send((uint8_t*)&statusinfoPacket, sizeof(statusinfoPacket));
+	uint16_t peakIndexesSize = fftPeaksNum * sizeof(uint16_t);
+	memcpy(statusinfoPacket->fftPeaksInfo, (uint8_t*) fftPeaksIndexes, peakIndexesSize);
+	memcpy(statusinfoPacket->fftPeaksInfo + peakIndexesSize, (uint8_t*)fftPeaksValues, fftPeaksNum * sizeof(float32_t));
+
+	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(statusinfoPacket), packetSize, temperature, battery, rmsAC);
+	Radio.Send((uint8_t*)statusinfoPacket, packetSize);
+	free(statusinfoPacket);
+
+	//APP DEMO:
+	TIM2->ARR += 100;
+
 }
 
 

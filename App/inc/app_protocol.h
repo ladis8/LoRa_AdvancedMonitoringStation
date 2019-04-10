@@ -56,7 +56,7 @@ typedef struct
 	float32_t rms;
 	float32_t temperature;
 	uint8_t   fftPeaksNum;
-	uint16_t  fftPeaksIndexes[5];
+	uint16_t  fftPeaksInfo[];
 
 } __PACKED__ radioprot_status_info_t;
 
