@@ -19,7 +19,7 @@
 #include "arm_math.h"
 #include "arm_const_structs.h"
 
-#include "app_protocol.h"
+#include "radio_protocol.h"
 #include "config.h"
 
 //include sensors handlers

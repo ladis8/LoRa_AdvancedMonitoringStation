@@ -329,13 +329,10 @@ void sendStatusInfo(){
 	uint16_t peakIndexesSize = fftPeaksNum * sizeof(uint16_t);
 	memcpy(statusinfoPacket->fftPeaksInfo, (uint8_t*) fftPeaksIndexes, peakIndexesSize);
 	memcpy(statusinfoPacket->fftPeaksInfo + peakIndexesSize, (uint8_t*)fftPeaksValues, fftPeaksNum * sizeof(float32_t));
-
-	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(statusinfoPacket), packetSize, temperature, battery, rmsAC);
+	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(radioprot_status_info_t), packetSize, temperature, battery, rmsAC);
 	Radio.Send((uint8_t*)statusinfoPacket, packetSize);
 	free(statusinfoPacket);
 
-	//APP DEMO:
-	TIM2->ARR += 100;
 
 }
 

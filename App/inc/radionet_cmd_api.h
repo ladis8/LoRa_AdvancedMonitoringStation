@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include "app_protocol.h"
+#include "radio_protocol.h"
 
 void gwPacketHandler(radioprot_gw_packet_t *packet, uint8_t rssi);
 
