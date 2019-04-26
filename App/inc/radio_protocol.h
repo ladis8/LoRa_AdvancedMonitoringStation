@@ -54,6 +54,7 @@ typedef struct
 
 	uint8_t   battery;
 	float32_t rms;
+	float32_t vpp;
 	float32_t temperature;
 	uint8_t   fftPeaksNum;
 	uint8_t  fftPeaksInfo[];

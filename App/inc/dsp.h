@@ -12,6 +12,8 @@
 
 void calculateMeanofSignal(uint16_t *signal, uint16_t fftSamplesNum, uint16_t *mean);
 
+void calculatePeakofSignal(uint16_t *signal, uint16_t N, float32_t *vpp);
+
 void calculateRMSofSignal(uint16_t *signal, uint16_t fftSamplesNum, float32_t *rms, float32_t *rms_meanRemoved);
 
 void calculateFFT(uint16_t *signal, uint16_t fftSamplesNum, float32_t *fftBuffer, uint8_t ifftFlag, uint8_t doBitReverse);

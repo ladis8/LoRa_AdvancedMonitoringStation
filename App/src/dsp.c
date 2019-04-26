@@ -6,16 +6,28 @@
 #include <stdlib.h>	//malloc
 
 #include "arm_const_structs.h"
+#include "util_console.h"
 
 
-void calculateMeanofSignal(uint16_t *signal, uint16_t fftSamplesNum, uint16_t *mean){
+void calculateMeanofSignal(uint16_t *signal, uint16_t N, uint16_t *mean){
 	uint32_t sum = 0;
-	for (int i = 0; i < fftSamplesNum; i++){
+	for (int i = 0; i < N; i++){
 		sum += signal[i];
 	}
-	*mean = (uint16_t)(sum/fftSamplesNum);
+	*mean = (uint16_t)(sum/N);
 }
 
+void calculatePeakofSignal(uint16_t *signal, uint16_t N, float32_t *vpp){
+	uint16_t mean;
+	calculateMeanofSignal(signal, N, &mean);
+	uint16_t vDiffMax = 0;
+	for (int i = 0; i < N; i++){
+			uint16_t vDiff = (signal[i] > mean)? signal[i] - mean : mean - signal[i];
+			if (vDiffMax < vDiff)
+				vDiffMax = vDiff;
+	}
+	*vpp = ((float32_t)vDiffMax)/4095 * 3.3;
+}
 
 void calculateRMSofSignal(uint16_t *signal, uint16_t N, float32_t *rms, float32_t *rms_meanRemoved){
 
@@ -99,8 +111,8 @@ void findFFTPeaks(float32_t *fftBuffer, uint16_t N,
 		float32_t *fftPeaksValues, uint16_t *fftPeaksIndexes, uint8_t fftPeaksNum,
 		float32_t delta, uint8_t lookAhead){
 
-	memset(fftPeaksValues, 0, fftPeaksNum);
-	memset(fftPeaksIndexes, UINT16_MAX, fftPeaksNum);
+	//memset(fftPeaksValues, 0, fftPeaksNum);
+	memset(fftPeaksIndexes, 0, fftPeaksNum * sizeof(uint16_t));
 
 	float32_t mx = 0;
 	uint16_t mxPos=0;
@@ -120,10 +132,10 @@ void findFFTPeaks(float32_t *fftBuffer, uint16_t N,
 
 				//check lookahead
 				bool jitter = false;
-				for (int j = 0; j < lookAhead; j++){
-					if (i + j < N && fftBuffer[i+j] > mx)
-						jitter = true;
-				}
+//				for (int j = 0; j < lookAhead; j++){
+//					if (i + j < N && fftBuffer[i+j] > mx)
+//						jitter = true;
+//				}
 
 				//save peak instead of minimum peak
 				if (!jitter){

@@ -179,6 +179,8 @@ int main( void ){
 
     int counter = 0;
     PRINTF("Starting message loop...\r\n");
+    //sendStatusInfo();
+
 
     //send join request at first
     loraNode_cfg.radionet.state = TX;
@@ -295,23 +297,25 @@ void sendStatusInfo(){
 
 	/* Calculate signal processing */
 	uint8_t fftPeaksNum = loraNode_cfg.adc_fft.fftPeaksNum;
-	uint16_t fftPeaksIndexes[fftPeaksNum];
-	float32_t fftPeaksValues[fftPeaksNum];
-	float32_t rmsDC, rmsAC;
+	float32_t rmsDC, rmsAC, vpp;
 
-		/* Calculate RMS */
+		/* Calculate RMS and VPP*/
 	calculateRMSofSignal(signal, N, &rmsDC, &rmsAC);
-	PRINTF("DEBUG: RMS calculation for N %u samples - DC %.3f AC %.3f\r\n", N, rmsDC, rmsAC);
+	calculatePeakofSignal(signal, N, &vpp);
+	PRINTF("DEBUG: RMS - DC %.3f AC %.3f, VPP - %.3f for N %u samples \r\n", rmsDC, rmsAC, vpp, N);
+
 
 		/* Calculate FFT */
 	float32_t *fftBuffer = (float32_t*) malloc(N * 2 * sizeof(float32_t));
 	calculateFFT(signal, N, fftBuffer,loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
 
 		/* Extract Peaks */
+	uint16_t *fftPeaksIndexes = (uint16_t*) malloc(fftPeaksNum * sizeof(uint16_t));
+	float32_t *fftPeaksValues = (float32_t*) malloc(fftPeaksNum * sizeof(float32_t));
 	PRINTF("DEBUG: FFT calculation for N %u samples, max indexes:\n\r", N);
     findFFTPeaks(fftBuffer, N, fftPeaksValues, fftPeaksIndexes, fftPeaksNum, 3.0, 0);
     for (int i=0; i < fftPeaksNum; i++)
-  	    PRINTF("    FFT peak: %f %u\r\n", fftPeaksValues[i], fftPeaksIndexes[i]);
+  	    PRINTF("    FFT peak: %0.3f %u\r\n", fftPeaksValues[i], fftPeaksIndexes[i]);
 
     free(fftBuffer);
 
@@ -323,15 +327,20 @@ void sendStatusInfo(){
 	statusinfoPacket->hdr.sId = loraNode_cfg.radionet.sId;
 	statusinfoPacket->battery = battery;
 	statusinfoPacket->rms = rmsAC;
+	statusinfoPacket->vpp = vpp;
 	statusinfoPacket->temperature = temperature;
 	statusinfoPacket->fftPeaksNum = fftPeaksNum;
 
 	uint16_t peakIndexesSize = fftPeaksNum * sizeof(uint16_t);
 	memcpy(statusinfoPacket->fftPeaksInfo, (uint8_t*) fftPeaksIndexes, peakIndexesSize);
 	memcpy(statusinfoPacket->fftPeaksInfo + peakIndexesSize, (uint8_t*)fftPeaksValues, fftPeaksNum * sizeof(float32_t));
-	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f\r\n", sizeof(radioprot_status_info_t), packetSize, temperature, battery, rmsAC);
+	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f, vpp: %.3f\r\n",
+			sizeof(radioprot_status_info_t), packetSize, temperature, battery, rmsAC, vpp);
 	Radio.Send((uint8_t*)statusinfoPacket, packetSize);
+	free(fftPeaksValues);
+	free(fftPeaksIndexes);
 	free(statusinfoPacket);
+
 
 
 }
