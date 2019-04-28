@@ -53,9 +53,13 @@ typedef struct
 	radioprot_header_t hdr;
 
 	uint8_t   battery;
-	float32_t rms;
-	float32_t vpp;
-	float32_t temperature;
+	uint16_t  temperature;
+	uint16_t  rms;
+	uint16_t  vpp;
+	float32_t kurtosisRatio;
+	uint8_t	  ringdownCounts;
+	uint16_t  riseTime;
+	uint16_t  thresholdDuration;
 	uint8_t   fftPeaksNum;
 	uint8_t  fftPeaksInfo[];
 
@@ -82,12 +86,14 @@ typedef struct
 
 	   struct __PACKED__ {
 		   uint16_t statusinfoInterval;
-		   uint8_t  rmsAveragingNum;
+		   uint8_t  dspRmsAveragingNum;
 		   uint8_t  tempAveragingNum;
 		   uint8_t  fftSamplesNum;
 		   uint8_t  adcSamplingTime;
 		   uint8_t  adcClockDivider;
 		   uint8_t  fftPeaksNum;
+		   uint8_t	dspKurtosisTrimmedSamples;
+		   uint16_t	dspThresholdVoltage;
 
 	   }status_app;
 

@@ -57,6 +57,10 @@
 #define CFG_ADC_CLOCK_DIVIDER 	ASYNC_DIV2
 #define CFG_ADC_SAMPLING_TIME 	S_160CYCLE5
 
+#define CFG_DSP_THRESHOLD_VOLTAGE 2.0
+#define CFG_DSP_KURTOSIS_TRIMMED_SAMPLES 10
+#define CFG_DSP_RMS_AVERAGING_NUM 1
+
 #define CFG_FWVER 0x01
 
 
@@ -151,9 +155,15 @@
 		uint8_t adcClockDivider;
 		uint8_t	adcSamplingTime;
 		uint8_t tempAveragingNum;
-		uint8_t rmsAveragingNum;
 
 	} adc_fft;
+
+	struct{
+		uint8_t rmsAveragingNum;
+		uint8_t kurtosisTrimmedSamples;
+		uint16_t thresholdVoltage;
+
+	} dsp;
 
 
     struct{

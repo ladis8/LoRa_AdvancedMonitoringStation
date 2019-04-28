@@ -150,7 +150,7 @@ void radioConfigure(void){
 
 int radioNetErrors = 0;
 
-int main( void ){
+int main(){
 
 
     HAL_Init( );
@@ -179,6 +179,7 @@ int main( void ){
 
     int counter = 0;
     PRINTF("Starting message loop...\r\n");
+
     //sendStatusInfo();
 
 
@@ -278,17 +279,23 @@ void sendStatusInfo(){
 	HW_ADC_DeInit();
 
 
-	/* Sample acc signal by ADC */
+	/* Get settings from config */
 	uint16_t configurableSamplesNum [] = {64, 128, 512, 1024, 2048};
 	uint16_t N = configurableSamplesNum[loraNode_cfg.adc_fft.fftSamplesNum];
 
-	uint16_t signal[N];
+	uint8_t fftPeaksNum = loraNode_cfg.adc_fft.fftPeaksNum;
+	float32_t thresholdVoltage = loraNode_cfg.dsp.thresholdVoltage;
+	uint8_t	 kurtosisTrimmedSamples = loraNode_cfg.dsp.kurtosisTrimmedSamples;
+
+
+	/* Sample acc signal by ADC */
+	uint16_t *signal = (uint16_t*) malloc(N * sizeof(uint16_t));
 
 	HW_ADC_Init_Con();
 	HW_ADC_Read_Continuous(signal, N);
 
 
-	float32_t temperature = TMP75_GetTemperatureFloat();
+	uint16_t temperature = TMP75_GetTemperature();
 	while (!isConversionFinished());
 
 	/* Start low power mode */
@@ -296,18 +303,25 @@ void sendStatusInfo(){
 
 
 	/* Calculate signal processing */
-	uint8_t fftPeaksNum = loraNode_cfg.adc_fft.fftPeaksNum;
-	float32_t rmsDC, rmsAC, vpp;
 
-		/* Calculate RMS and VPP*/
+	float32_t rmsDC, rmsAC, vpp, kurtosisRatio;
+	uint8_t ringdownCounts;
+	uint16_t riseTime, thresholdDuration, vppIndex, firstThresholdCrossingIndex;
+
+		/* Calculate RMS, VPP, ringdown counts, rise time, threshold duration  and kurtosis*/
 	calculateRMSofSignal(signal, N, &rmsDC, &rmsAC);
-	calculatePeakofSignal(signal, N, &vpp);
-	PRINTF("DEBUG: RMS - DC %.3f AC %.3f, VPP - %.3f for N %u samples \r\n", rmsDC, rmsAC, vpp, N);
+	calculatePeakofSignal(signal, N, &vpp, &vppIndex);
+	calculateTimeDomainAnalysis(signal, N, thresholdVoltage, &firstThresholdCrossingIndex, &ringdownCounts, &thresholdDuration);
+	calculateRiseTimeofSignal(vppIndex, firstThresholdCrossingIndex, &riseTime);
+	calculateKurtosisRatioofSignal(signal, N, kurtosisTrimmedSamples, &kurtosisRatio);
+	PRINTF("DEBUG: RMS - DC %.3f AC %.3f, VPP - %.3f , kurtosis ratio - %.3f, \r\n ringdown counts - %u, riseTime %u, thresholdDuration %u for N %u samples \r\n", rmsDC, rmsAC, vpp, kurtosisRatio, ringdownCounts, riseTime, thresholdDuration, N);
+
 
 
 		/* Calculate FFT */
 	float32_t *fftBuffer = (float32_t*) malloc(N * 2 * sizeof(float32_t));
 	calculateFFT(signal, N, fftBuffer,loraNode_cfg.adc_fft.ifftFlag, loraNode_cfg.adc_fft.doBitReverse);
+	free(signal);
 
 		/* Extract Peaks */
 	uint16_t *fftPeaksIndexes = (uint16_t*) malloc(fftPeaksNum * sizeof(uint16_t));
@@ -320,23 +334,30 @@ void sendStatusInfo(){
     free(fftBuffer);
 
 
+
 	/* Send LoRa packet */
     int packetSize = sizeof(radioprot_status_info_t) + (sizeof(uint16_t) + sizeof(float32_t)) * fftPeaksNum;
 	radioprot_status_info_t *statusinfoPacket = (radioprot_status_info_t*)malloc(packetSize);
 	statusinfoPacket->hdr.cmd = RADIOPROT_CMD_STATUS << 4;
 	statusinfoPacket->hdr.sId = loraNode_cfg.radionet.sId;
 	statusinfoPacket->battery = battery;
-	statusinfoPacket->rms = rmsAC;
-	statusinfoPacket->vpp = vpp;
 	statusinfoPacket->temperature = temperature;
+	statusinfoPacket->rms = rmsAC * 4095 / 3.3;
+	statusinfoPacket->vpp = vpp * 4095 / 3.3;
+	statusinfoPacket->kurtosisRatio = kurtosisRatio;
+	statusinfoPacket->ringdownCounts = ringdownCounts;
+	statusinfoPacket->riseTime = riseTime;
+	statusinfoPacket->thresholdDuration = thresholdDuration;
 	statusinfoPacket->fftPeaksNum = fftPeaksNum;
 
 	uint16_t peakIndexesSize = fftPeaksNum * sizeof(uint16_t);
 	memcpy(statusinfoPacket->fftPeaksInfo, (uint8_t*) fftPeaksIndexes, peakIndexesSize);
 	memcpy(statusinfoPacket->fftPeaksInfo + peakIndexesSize, (uint8_t*)fftPeaksValues, fftPeaksNum * sizeof(float32_t));
-	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %.3f, battery: %u, rms: %.3f, vpp: %.3f\r\n",
-			sizeof(radioprot_status_info_t), packetSize, temperature, battery, rmsAC, vpp);
+	PRINTF("INFO: Sending STATUS INFO packet (s. sizeof: %u, %u) temperature: %u battery: %u, rms: %u, vpp: %u\r\n",
+			sizeof(radioprot_status_info_t), packetSize, statusinfoPacket->temperature, statusinfoPacket->battery, statusinfoPacket->rms, statusinfoPacket->vpp);
 	Radio.Send((uint8_t*)statusinfoPacket, packetSize);
+
+	/* Free memory */
 	free(fftPeaksValues);
 	free(fftPeaksIndexes);
 	free(statusinfoPacket);

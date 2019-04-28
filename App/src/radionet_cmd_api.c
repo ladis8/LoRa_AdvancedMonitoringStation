@@ -27,8 +27,10 @@ bool joinReplyCallback(radioprot_gw_packet_t *packet){
 		loraNode_cfg.adc_fft.adcSamplingTime = packet-> join.status_app.adcSamplingTime;
 		loraNode_cfg.adc_fft.fftPeaksNum = packet-> join.status_app.fftPeaksNum;
 
-		loraNode_cfg.adc_fft.rmsAveragingNum = packet-> join.status_app.rmsAveragingNum;
+		loraNode_cfg.dsp.rmsAveragingNum = packet-> join.status_app.dspRmsAveragingNum;
 		loraNode_cfg.adc_fft.tempAveragingNum = packet-> join.status_app.tempAveragingNum;
+		loraNode_cfg.dsp.kurtosisTrimmedSamples = packet->join.status_app.dspKurtosisTrimmedSamples;
+		loraNode_cfg.dsp.thresholdVoltage = packet->join.status_app.dspThresholdVoltage;
 	}
 
 
