@@ -8,6 +8,6 @@ extern "C" {
 
 #include "radio_protocol.h"
 
-void gwPacketHandler(radioprot_gw_packet_t *packet, uint8_t rssi);
+void rxGWPacketHandler(radioprot_gw_packet_t *packet);
 
 #endif

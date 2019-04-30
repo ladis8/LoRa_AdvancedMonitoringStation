@@ -41,16 +41,17 @@
 
 
 
-uint16_t BufferSize = BUFFER_SIZE;
-uint8_t Buffer[BUFFER_SIZE];
+uint16_t rxPacketBufferSize = BUFFER_SIZE;
+uint8_t rxPacketBuffer[BUFFER_SIZE];
 uint8_t fftBuffer[256];
-int8_t RssiValue = 0;
-int8_t SnrValue = 0;
+int8_t rssiValue = 0;
+int8_t snrValue = 0;
+int8_t rntErrors = 0;
 
 int seqnum;
 int numChunks;
 
-
+int configReqErr, joinReqErr = 0;
 
 
 /* Led Timers objects*/
@@ -73,6 +74,8 @@ void OnStatusinfoTimerDone(void *context);
 
 void sendStatusInfo();
 void sendJoinRequest();
+void sendConfigRequest();
+void txNodePacketHandler();
 
 
 
@@ -177,8 +180,7 @@ int main(){
     //TimerStart(&timerLed );
 
 
-    int counter = 0;
-    PRINTF("Starting message loop...\r\n");
+    PRINTF("\n\n\rStarting message loop...\r\n");
 
     //sendStatusInfo();
 
@@ -191,45 +193,54 @@ int main(){
         switch(loraNode_cfg.radionet.state)
         {
         case RX:
-        	//PRINTF("Radio set on RX with timeout %u\r\n",loraNode_cfg.lora.rxTimeout );
+        	//PRINTF("DEBUG: Radio set on RX with timeout %u\r\n",loraNode_cfg.lora.rxTimeout );
         	Radio.Rx(loraNode_cfg.lora.rxTimeout);
         	loraNode_cfg.radionet.state = LOWPOWER;
             break;
 
-        case TX:
-        	//CASE01: if not joined --> keep sending join
-        	if (!loraNode_cfg.radionet.nodeJoined){
-        		sendJoinRequest();
-        	}
-
-        	//CASE02: if joined and in status mode --> send status info
-        	else if (loraNode_cfg.radionet.nodeJoined && APPLICATION_MODE == APP_STATUS_MODE){
-        		sendStatusInfo();
-        		TimerSetValue(&timerStatus,loraNode_cfg.radionet.statusinfoInterval);
-        		TimerStart(&timerStatus);
-        	}
-        	//CASE03 if joined and in debug mode --> send proper info
-        	else if (loraNode_cfg.radionet.nodeJoined && APPLICATION_MODE == APP_DEBUG_MODE){
-        		PRINTF("ERROR: Not implemented yet\r\n");
-        	}
-
-        	loraNode_cfg.radionet.state = LOWPOWER;
-            break;
+        case RX_DONE:
+        	rxGWPacketHandler((radioprot_gw_packet_t*)rxPacketBuffer);
+        	break;
 
         case RX_TIMEOUT:
         case RX_ERROR:
+        	  if (loraNode_cfg.radionet.joinPending){
+        	    	loraNode_cfg.radionet.joinPending = false;
+        	    	joinReqErr++;
+        	  }
+        	  else if (loraNode_cfg.radionet.configPending){
+        	       	loraNode_cfg.radionet.configPending = false;
+        	       	configReqErr++;
+        	       	if (configReqErr == 3){
+        	       		loraNode_cfg.radionet.nodeJoined = false;
+        	       		configReqErr = 0;
+        	       	}
+        	  }
 
-        	//CASE01: if not joined --> keep sending join
-        	if (!loraNode_cfg.radionet.nodeJoined){
-        		loraNode_cfg.radionet.state = TX;
-                break;
-            }
-        	//CASE02: if joined and in status mode --> ??
+              //CASE01: if not joined --> keep sending join
+              if (!loraNode_cfg.radionet.nodeJoined){
+            	  loraNode_cfg.radionet.state = TX;
+              }
+              //CASE02: if not joined --> keep sending join
+              else if (!loraNode_cfg.radionet.nodeConfigured){
+                  loraNode_cfg.radionet.state = TX;
 
-        	//SendStatusInfo(counter);
-        	counter++;
-        	loraNode_cfg.radionet.state = RX;
+             }
+             //CASE02: if joined and in status mode --> ??
+             else if (APPLICATION_MODE == APP_STATUS_MODE){
+            	//SendStatusInfo(counter);
+            	//loraNode_cfg.radionet.state = RX;
+            	 PRINTF("RX ERROR: Note implemented yet...");
+            	break;
+              }
+
+
+        case TX:
+        case TX_TIMEOUT:
+        	txNodePacketHandler();
             break;
+
+
 
         case LOWPOWER:
         default:
@@ -249,6 +260,40 @@ int main(){
     }
 }
 
+void txNodePacketHandler(){
+
+	//CASE01: if not joined --> keep sending join request
+	if (!loraNode_cfg.radionet.nodeJoined){
+	     sendJoinRequest();
+	     loraNode_cfg.radionet.joinPending = true;
+	     loraNode_cfg.radionet.state = RX;
+	}
+	 //CASE02: if joined in status mode --> send config request
+	else if (!loraNode_cfg.radionet.nodeConfigured && APPLICATION_MODE == APP_STATUS_MODE){
+		sendConfigRequest();
+		loraNode_cfg.radionet.configPending = true;
+		loraNode_cfg.radionet.state = RX;
+	}
+    //CASE03: if joined, configured and in status mode --> send status info
+	//TODO: Listen after sent...
+	else if (APPLICATION_MODE == APP_STATUS_MODE){
+	     sendStatusInfo();
+	     TimerSetValue(&timerStatus,loraNode_cfg.radionet.statusinfoInterval);
+	     TimerStart(&timerStatus);
+	     loraNode_cfg.radionet.state = LOWPOWER;
+	 }
+	//CASE03 if joined and in debug mode --> send proper info
+	else if (APPLICATION_MODE == APP_DEBUG_MODE){
+	       PRINTF("ERROR: Not implemented yet\r\n");
+	 }
+	else{
+		loraNode_cfg.radionet.state = LOWPOWER;
+	}
+
+
+}
+
+
 
 void sendJoinRequest(){
 	//TODO: create config init method
@@ -263,13 +308,22 @@ void sendJoinRequest(){
 			.fwver = loraNode_cfg.fwver
 
 	};
-	loraNode_cfg.radionet.joinPending = true;
 	Radio.Send((uint8_t*)&joinRequestPacket, sizeof(joinRequestPacket));
-	PRINTF("INFO: Sending join request... size: %d \r\n", sizeof(joinRequestPacket));
+	PRINTF("INFO: Sending JOIN REQUEST... size: %d \r\n", sizeof(joinRequestPacket));
+}
+
+void sendConfigRequest(){
+
+	radioprot_config_req_t configRequestPacket = {
+			.hdr.cmd = RADIOPROT_CMD_CONFIGREPLY << 4,
+			.hdr.sId = loraNode_cfg.radionet.sId,
+	};
+	Radio.Send((uint8_t*)&configRequestPacket, sizeof(configRequestPacket));
+	PRINTF("INFO: Sending CONFIG REQUEST... size: %d \r\n", sizeof(configRequestPacket));
 }
 
 
-//TODO: delta
+
 //TODO: low power mode beside ADC???
 void sendStatusInfo(){
 
@@ -284,6 +338,7 @@ void sendStatusInfo(){
 	uint16_t N = configurableSamplesNum[loraNode_cfg.adc_fft.fftSamplesNum];
 
 	uint8_t fftPeaksNum = loraNode_cfg.adc_fft.fftPeaksNum;
+	float32_t fftPeaksDelta = (float32_t)loraNode_cfg.adc_fft.fftPeaksDelta;
 	float32_t thresholdVoltage = loraNode_cfg.dsp.thresholdVoltage;
 	uint8_t	 kurtosisTrimmedSamples = loraNode_cfg.dsp.kurtosisTrimmedSamples;
 
@@ -327,7 +382,7 @@ void sendStatusInfo(){
 	uint16_t *fftPeaksIndexes = (uint16_t*) malloc(fftPeaksNum * sizeof(uint16_t));
 	float32_t *fftPeaksValues = (float32_t*) malloc(fftPeaksNum * sizeof(float32_t));
 	PRINTF("DEBUG: FFT calculation for N %u samples, max indexes:\n\r", N);
-    findFFTPeaks(fftBuffer, N, fftPeaksValues, fftPeaksIndexes, fftPeaksNum, 3.0, 0);
+    findFFTPeaks(fftBuffer, N, fftPeaksValues, fftPeaksIndexes, fftPeaksNum, fftPeaksDelta, 0);
     for (int i=0; i < fftPeaksNum; i++)
   	    PRINTF("    FFT peak: %0.3f %u\r\n", fftPeaksValues[i], fftPeaksIndexes[i]);
 
@@ -367,17 +422,6 @@ void sendStatusInfo(){
 }
 
 
-
-void OnTxDone( void )
-{
-    Radio.Sleep();
-    PRINTF("OnTxDone\n\n\r");
-    if (!loraNode_cfg.radionet.nodeJoined){
-    		loraNode_cfg.radionet.joinPending = true;
-    		loraNode_cfg.radionet.state = RX;
-    }
-}
-
 /*void FFT_OnTxDone(void){
 
 
@@ -403,59 +447,68 @@ void OnTxDone( void )
 
 
 
-void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
-{
+void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr ){
     Radio.Sleep();
-    PRINTF("OnRxDone: ");
+    PRINTF("\n\rOnRxDone: ");
 
-    RssiValue = rssi;
-    SnrValue = snr;
-    BufferSize = size;
-    memcpy( Buffer, payload, BufferSize );
+    rssiValue = rssi;
+    snrValue = snr;
+    rxPacketBufferSize = size;
+    memcpy(rxPacketBuffer, payload, rxPacketBufferSize);
 
-    PRINTF("RssiValue=%d dBm, SnrValue=%d, bytes received=%d\n\r", rssi, snr, size);
+    PRINTF("DEBUG: RssiValue=%d dBm, SnrValue=%d, bytes received=%d\n\r", rssi, snr, size);
     PRINTF("%s\r\n", payload);
-    TRACE_DEBUG("DEBUG: ");
-    for (int i=0; i < 20; i++){
-    	TRACE_DEBUG("%u ", *(payload+i));
-    }
-    TRACE_DEBUG("\r\n");
+//    TRACE_DEBUG("DEBUG: ");
+//    for (int i=0; i < 20; i++){
+//    	TRACE_DEBUG("%u ", *(payload+i));
+//    }
+//    TRACE_DEBUG("\r\n");
 
-
-    gwPacketHandler((radioprot_gw_packet_t*)payload, rssi);
-
+    loraNode_cfg.radionet.state = RX_DONE;
 }
 
-void OnTxTimeout( void )
-{
-    Radio.Sleep( );
-    PRINTF("OnTxTimeout\n\r");
-    loraNode_cfg.radionet.state = TX_TIMEOUT;
 
-}
-
-void OnRxTimeout( void )
-{
+void OnRxTimeout(){
+	PRINTF("\n\rOnRxTimeout\n\r");
     Radio.Sleep();
-    PRINTF("OnRxTimeout\n\r");
-    if (loraNode_cfg.radionet.joinPending){
-    	loraNode_cfg.radionet.joinPending = false;
-    }
     loraNode_cfg.radionet.state = RX_TIMEOUT;
 
 }
 
-void OnRxError( void )
-{
+void OnRxError(){
+    PRINTF("\n\rOnRxError\n\r");
     Radio.Sleep( );
-    PRINTF("OnRxError\n\r");
+    radioNetErrors++;
     loraNode_cfg.radionet.state = RX_ERROR;
-
-    if (loraNode_cfg.radionet.joinPending){
-        	loraNode_cfg.radionet.joinPending = false;
-        	loraNode_cfg.radionet.state = TX;
-        }
 }
+
+
+void OnTxDone( void ){
+
+	PRINTF("OnTxDone\n\n\r");
+	if (loraNode_cfg.radionet.state != RX){
+		Radio.Sleep();
+	}
+
+
+
+
+
+}
+void OnTxTimeout(){
+    PRINTF("OnTxTimeout\n\n\r");
+    Radio.Sleep( );
+
+	if (!loraNode_cfg.radionet.joinPending)
+		loraNode_cfg.radionet.joinPending = false;
+	else if (!loraNode_cfg.radionet.configPending)
+		loraNode_cfg.radionet.configPending = false;
+
+    loraNode_cfg.radionet.state = TX_TIMEOUT;
+
+}
+
+
 
 void OnStatusinfoTimerDone(void *context){
 	//cause to send status info

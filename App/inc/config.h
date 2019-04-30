@@ -11,12 +11,15 @@
 #include "arm_math.h"
 
 
- /* DEFAULT RADIONET SETTINGS*/
-#define CFG_INITIAL_SID 			0x00						//0x00 is for new join
-#define CFG_UID						(*(uint32_t *)0x1FF80050U)
-#define CFG_JOIN_INTERVAL 			15000
 
-//#define CFG_UID						(*(uint32_t *)0x1FF80050U) //Unique device ID register base address
+#define CFG_FWVER 0x01
+
+ /* DEFAULT RADIONET SETTINGS*/
+#define CFG_INITIAL_SID 								0x00	//0x00 is for new join
+#define CFG_UID											(*(uint32_t *)0x1FF80050U)
+#define CFG_JOIN_INTERVAL 								15000
+#define CFG_STATUSINFO_INTERVAL 						35000
+#define CFG_STATUSINFO_LISTEN_INTERVAL 					5000
 
 
 
@@ -51,17 +54,19 @@
  /* DEFAULT SETTING FOR FFT ADC */
  //TODO: check bit reverse and ifft
  //TODO: find more logical order
-#define CFG_FFT_SAMPLES_NUM   	N_1024
-#define CFG_FFT_PEAKS_NUM 		5
-
 #define CFG_ADC_CLOCK_DIVIDER 	ASYNC_DIV2
 #define CFG_ADC_SAMPLING_TIME 	S_160CYCLE5
+#define CFG_FFT_SAMPLES_NUM   	N_1024
+#define CFG_FFT_PEAKS_NUM 		5
+#define CFG_FFT_PEAKS_DELTA     2
 
+ /* DEFAULT SETTING FOR DSP */
 #define CFG_DSP_THRESHOLD_VOLTAGE 2.0
 #define CFG_DSP_KURTOSIS_TRIMMED_SAMPLES 10
 #define CFG_DSP_RMS_AVERAGING_NUM 1
+#define CFG_DSP_RMS_AC true
 
-#define CFG_FWVER 0x01
+
 
 
 
@@ -69,6 +74,7 @@
  typedef enum{
      LOWPOWER,
      RX,
+	 RX_DONE,
      RX_TIMEOUT,
      RX_ERROR,
      TX,
@@ -130,9 +136,12 @@
        uint32_t uId; 		    //Unique ID of device == MAC (but only first 32 bit)
        bool joinPending;
        bool nodeJoined;
+       bool configPending;
+       bool nodeConfigured;
        radioState_t state;
        uint16_t joinInterval;
        uint16_t statusinfoInterval;
+       uint16_t statusinfoListenInterval;
 
     } radionet;
 
@@ -150,19 +159,20 @@
 		uint8_t ifftFlag;
 		uint8_t doBitReverse;
 
-		uint8_t fftSamplesNum;
-		uint8_t fftPeaksNum;
 		uint8_t adcClockDivider;
 		uint8_t	adcSamplingTime;
+		uint8_t fftSamplesNum;
+		uint8_t fftPeaksNum;
+		uint8_t fftPeaksDelta;
 		uint8_t tempAveragingNum;
 
 	} adc_fft;
 
 	struct{
-		uint8_t rmsAveragingNum;
-		uint8_t kurtosisTrimmedSamples;
 		uint16_t thresholdVoltage;
-
+		uint8_t kurtosisTrimmedSamples;
+		uint8_t rmsAc;
+		uint8_t rmsAveragingNum;
 	} dsp;
 
 
@@ -174,7 +184,6 @@
 
        uint16_t rmsInterval;
        uint16_t fftCompressInterval;
-
 
     } monitoring;
 

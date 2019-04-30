@@ -17,9 +17,11 @@ typedef enum
 {
 
    RADIOPROT_CMD_JOINREPLY                 = 0x01,
-   RADIOPROT_CMD_STATUS                    = 0x02,
-   RADIOPROT_CMD_SENSOR_DATA               = 0x03,
-   RADIOPROT_CMD_DATA_CHUNKS               = 0x04,
+   RADIOPROT_CMD_CONFIGREPLY               = 0x02,
+   RADIOPROT_CMD_STATUS                    = 0x03,
+   RADIOPROT_CMD_SENSOR_DATA               = 0x04,
+   RADIOPROT_CMD_DATA_CHUNKS               = 0x05,
+   RADIOPROT_CMD_RESTART                   = 0x06,
 
 
 } appprot_cmd_type_t;
@@ -33,8 +35,9 @@ typedef struct
 
 
 
+/********** Node  -- > GW **********/
 
-/* Node  -- > GW packet JOIN REQUEST */
+/* Radio packet JOIN REQUEST */
 typedef struct
 {
    radioprot_header_t hdr;
@@ -45,9 +48,16 @@ typedef struct
 } __PACKED__ radioprot_join_req_t;
 
 
+/* Radio packet CONFIG REQUEST */
+typedef struct
+{
+   radioprot_header_t hdr;
 
-/* NODE -->  GW packet STATUS INFO */
-//TODO: make peaks dynamic
+} __PACKED__ radioprot_config_req_t;
+
+
+
+/* Radio packet STATUS INFO */
 typedef struct
 {
 	radioprot_header_t hdr;
@@ -65,12 +75,14 @@ typedef struct
 
 } __PACKED__ radioprot_status_info_t;
 
+/********** Node  -- > GW **********/
 
 
 
 
+/********** GW  -- > NODE **********/
 
-/* GW  -- > Node packet JOIN RESPONSE */
+/* Radio packet JOIN REPLY */
 typedef struct
 {
    uint8_t 	result;
@@ -79,27 +91,44 @@ typedef struct
    uint8_t 	cr;
    uint16_t joinInterval;
    uint8_t 	appMode;
-   union{
-	   struct __PACKED__ {
-		   uint8_t garbage[8];
-	   }cmd_app;
 
-	   struct __PACKED__ {
-		   uint16_t statusinfoInterval;
-		   uint8_t  dspRmsAveragingNum;
-		   uint8_t  tempAveragingNum;
-		   uint8_t  fftSamplesNum;
-		   uint8_t  adcSamplingTime;
-		   uint8_t  adcClockDivider;
-		   uint8_t  fftPeaksNum;
-		   uint8_t	dspKurtosisTrimmedSamples;
-		   uint16_t	dspThresholdVoltage;
+} __PACKED__ radioprot_join_rep_t;
 
-	   }status_app;
+/* Radio packet CONFIG REPLY */
+typedef struct
+{
+	// General
+	uint16_t statusinfoInterval;
+	uint16_t statusinfoListenInterval;
+	uint8_t  tempAveragingNum;
+	// FFT & ADC
+	uint8_t  adcSamplingTime;
+	uint8_t  adcClockDivider;
+	uint8_t  fftSamplesNum;
+	uint8_t  fftPeaksNum;
+	uint8_t  fftPeaksDelta;
+	//DSP
+	uint16_t dspThresholdVoltage;
+	uint8_t	 dspKurtosisTrimmedSamples;
+	uint8_t  dspRmsAc;
+	uint8_t  dspRmsAveragingNum;
 
-   };
+ }__PACKED__ radioprot_config_rep_t;
 
-} __PACKED__ radioprot_join_res_t;
+
+
+ /* Radio packet RESTART */
+ typedef struct
+ {
+    uint8_t 	resetConfig;
+
+ } __PACKED__ radioprot_restart_t;
+
+
+
+
+
+
 
 
 
@@ -211,6 +240,9 @@ typedef struct
 
 
 
+
+
+
 typedef struct
 {
    radioprot_header_t hdr;
@@ -219,9 +251,10 @@ typedef struct
    {
       uint8_t                      	 data[APPPROT_DATA_MAXSIZE];
       radioprot_join_req_t           join_req;
+      radioprot_config_req_t         config_req;
+      radioprot_status_info_t        statusinfo;
       radioprot_sensor_data_t        sensor_data;
       radioprot_chunk_data_t         chunk_data;
-      radioprot_status_info_t        statusinfo;
    };
 
 } __PACKED__ radioprot_node_packet_t;
@@ -233,7 +266,9 @@ typedef struct
    union
    {
       uint8_t                         data[APPPROT_DATA_MAXSIZE];
-      radioprot_join_res_t            join;
+      radioprot_join_rep_t            join_rep;
+      radioprot_config_rep_t          config_rep;
+      radioprot_restart_t			  restart;
       radioprot_sensor_data_req_t     sensor_req;
       radioprot_chunk_data_req_t      chunk_req;
 

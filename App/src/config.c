@@ -10,7 +10,7 @@
 #include "string.h"
 #include "util_console.h"
 
-//WISDOM: variables definied in config.h are multiply defined by includion
+//WISDOM: variables definied in config.h are multiply defined by inclusion
 
 
 const char * adcSamplingTime_names[] = {
@@ -27,7 +27,7 @@ const char * fftSamplesNum_names[] = {
 	"N_64","N_128","N_512","N_1024","N_2048"
  };
 
-
+//TODO: Statusinfo interval in seconds
 
 loraNode_cfg_t loraNode_cfg = {
 
@@ -38,7 +38,11 @@ loraNode_cfg_t loraNode_cfg = {
 				.state = LOWPOWER,
 				.nodeJoined = false,
 				.joinPending = false,
-				.joinInterval = 10000,
+				.nodeConfigured = false,
+				.configPending = false,
+				.joinInterval = CFG_JOIN_INTERVAL,
+				.statusinfoInterval = CFG_STATUSINFO_INTERVAL,
+				.statusinfoListenInterval = CFG_STATUSINFO_LISTEN_INTERVAL,
 		},
 
 		.lora = {
@@ -52,17 +56,19 @@ loraNode_cfg_t loraNode_cfg = {
 
 		.dsp = {
 				.kurtosisTrimmedSamples = CFG_DSP_KURTOSIS_TRIMMED_SAMPLES,
-					.thresholdVoltage = CFG_DSP_THRESHOLD_VOLTAGE,
-					.rmsAveragingNum = CFG_DSP_RMS_AVERAGING_NUM,
+				.thresholdVoltage = CFG_DSP_THRESHOLD_VOLTAGE,
+				.rmsAveragingNum = CFG_DSP_RMS_AVERAGING_NUM,
+				.rmsAc = CFG_DSP_RMS_AC,
 		},
 
 		.adc_fft = {
-			.ifftFlag 	  = 0,
-			.doBitReverse = 1,
-			.fftSamplesNum = CFG_FFT_SAMPLES_NUM,
-			.fftPeaksNum = CFG_FFT_PEAKS_NUM,
-			.adcClockDivider = CFG_ADC_CLOCK_DIVIDER,
-			.adcSamplingTime = CFG_ADC_SAMPLING_TIME,
+				.ifftFlag 	  = 0,
+				.doBitReverse = 1,
+				.fftSamplesNum = CFG_FFT_SAMPLES_NUM,
+				.fftPeaksNum = CFG_FFT_PEAKS_NUM,
+				.fftPeaksDelta = CFG_FFT_PEAKS_DELTA,
+				.adcClockDivider = CFG_ADC_CLOCK_DIVIDER,
+				.adcSamplingTime = CFG_ADC_SAMPLING_TIME,
 		},
 };
 
@@ -75,21 +81,28 @@ void printConfig(){
 	PRINTF("    UID      	 : 0x%08x\r\n", loraNode_cfg.radionet.uId);
 	PRINTF("    joinInterval : %u\r\n" , loraNode_cfg.radionet.joinInterval);
 	PRINTF("    state        : %u\r\n" , loraNode_cfg.radionet.state);
+	PRINTF("    status int.  : %u\r\n", loraNode_cfg.radionet.statusinfoInterval);
+	PRINTF("    listen. int. : %u\r\n", loraNode_cfg.radionet.statusinfoListenInterval);
+
 	PRINTF("LoRa radio params: \r\n");
 	PRINTF("    BW : %u\r\n", loraNode_cfg.lora.bw);
 	PRINTF("    CR : %u\r\n", loraNode_cfg.lora.sf);
 	PRINTF("    SF : %u\r\n", loraNode_cfg.lora.cr);
+
 	PRINTF("ADC && FFT params: \r\n");
-	PRINTF("    FFT SAMPLES   : %s\r\n", fftSamplesNum_names[loraNode_cfg.adc_fft.fftSamplesNum]);
-	PRINTF("    FFT NUM PEAKS : %u\r\n", loraNode_cfg.adc_fft.fftPeaksNum);
 	PRINTF("    ADC sampling T: %s\r\n", adcSamplingTime_names[loraNode_cfg.adc_fft.adcSamplingTime]);
 	PRINTF("    ADC divider   : %s\r\n", adcDivider_names[loraNode_cfg.adc_fft.adcClockDivider]);
+	PRINTF("    FFT SAMPLES   : %s\r\n", fftSamplesNum_names[loraNode_cfg.adc_fft.fftSamplesNum]);
+	PRINTF("    FFT NUM PEAKS : %u\r\n", loraNode_cfg.adc_fft.fftPeaksNum);
+	PRINTF("    FFT PEAKS D.  : %u\r\n", loraNode_cfg.adc_fft.fftPeaksDelta);
 	PRINTF("    TEMP samples  : %u\r\n", loraNode_cfg.adc_fft.tempAveragingNum);
+
 	PRINTF("DSP params: \r\n");
-	PRINTF("    RMS samples   : %u\r\n", loraNode_cfg.dsp.rmsAveragingNum);
-	PRINTF("    % trimmed     : %u\r\n", loraNode_cfg.dsp.kurtosisTrimmedSamples);
 	PRINTF("    THRESHOLD     : %u\r\n", loraNode_cfg.dsp.thresholdVoltage);
-	PRINTF("Status int.       : %u\r\n", loraNode_cfg.radionet.statusinfoInterval);
+	PRINTF("    % trimmed     : %u\r\n", loraNode_cfg.dsp.kurtosisTrimmedSamples);
+	PRINTF("    RMS samples   : %u\r\n", loraNode_cfg.dsp.rmsAveragingNum);
+	PRINTF("    RMS REQ       : %s\r\n", (loraNode_cfg.dsp.rmsAc)? "AC" : "DC");
+
 
 }
 
