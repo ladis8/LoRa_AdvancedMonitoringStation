@@ -1,14 +1,20 @@
-/*
- * hw_adc_CMSIS.c
+/*!
+ * \file		hw_adc_CMSIS.c
  *
- *  Created on: Dec 29, 2018
- *      Author: ladislav
+ * \brief		ADC API - implementation of functions handling with ADC using CMSIS only
+ * 				not used in the end
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
  */
 
 #include "hw_adc_CMSIS.h"
 
 
-void HW_ADC_Init(){
+void HW_ADC_Init()
+{
 
 	//RCC->AHBENR |= RCC_AHBENR_ADC12EN;
 	RCC-> APB2ENR |= RCC_APB2ENR_ADCEN;
@@ -49,7 +55,8 @@ void HW_ADC_Init(){
 
 }
 
-void HW_ADC_IoInit(){
+void HW_ADC_IoInit()
+{
 
 	//Define analog input pin
 	RCC->IOPENR |= RCC_IOPENR_GPIOAEN;
@@ -58,7 +65,8 @@ void HW_ADC_IoInit(){
 
 }
 
-uint16_t readADCValue (){
+uint16_t readADCValue ()
+{
 
 	ADC1->CR |= ADC_CR_ADSTART;
 	/* wait until the sequence of conversions is done */

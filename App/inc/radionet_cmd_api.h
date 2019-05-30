@@ -1,4 +1,14 @@
-/* Define to prevent recursive inclusion -------------------------------------*/
+/*!
+ * \file		radionet_cmd_api.h
+ *
+ * \brief		Application command API - definition of RX packet handlers
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
+
 #ifndef __RADIONET_CMD_API_H__
 #define __RADIONET_CMD_API_H__
 

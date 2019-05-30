@@ -1,4 +1,14 @@
-/* Define to prevent recursive inclusion -------------------------------------*/
+/*!
+ * \file		dsp.h
+ *
+ * \brief		Application DSP API - definition of functions for signal processing
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
+
 #ifndef __DSP_H__
 #define __DSP_H__
 
@@ -33,5 +43,5 @@ void convertFFTPeaks(float32_t *fftPeaksValuesFloat, uint8_t *fftPeaksValuesInt,
 
 
 
-#endif/* __DSP_H__*/
+#endif
 

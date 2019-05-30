@@ -1,11 +1,17 @@
-/**
- * \file app.h
+/*!
+ * \file		app.h
  *
+ * \brief		APPLICATION INCLUDES - definition of includes and externs needed by application
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
  *
  */
+
  
-#ifndef __APP_H
-#define __APP_H
+#ifndef __APP_H__
+#define __APP_H__
 
 #define APP_DEBUG_MODE 	1
 #define APP_STATUS_MODE 0
@@ -22,8 +28,6 @@
 #include "radio_protocol.h"
 #include "config.h"
 
-//include sensors handlers
-#include "sensor_tmp75.h"
 
 
 
@@ -45,4 +49,4 @@ static int APPLICATION_MODE = APP_STATUS_MODE; //default
 //void system_restart(void);
 
 
-#endif // __APP_H
+#endif

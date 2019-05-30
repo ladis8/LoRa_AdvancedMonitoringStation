@@ -1,12 +1,21 @@
-
+/*!
+ * \file		dsp.c
+ *
+ * \brief		Application DSP - implementation of functions for signal processing
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
 
 #include "dsp.h"
 
 #include <stdbool.h>
 #include <stdlib.h>	//malloc
 
-#include "arm_const_structs.h"
-#include "util_console.h"
+#include "arm_const_structs.h"	//own file with filtered arm_const_structures
+//#include "util_console.h"
 
 
 
@@ -105,7 +114,6 @@ void calculateTimeDomainAnalysis(uint16_t *signal, uint16_t N, uint16_t threshol
 
 		}
 	}
-	PRINTF("DEBUG: Ringdown count %u\r\n", cnt);
 	*ringDownCount = cnt;
 	*firstTresholdCrossing = start;
 	*thresholdDuration = (start != -1)? end-start: -1;
@@ -164,7 +172,7 @@ void calculateKurtosisRatioofSignal(uint16_t *signal, uint16_t N, uint8_t percen
 
 	_calculateKurtosisofSignal (signalCopy + dropNumSamples, N - 2 * dropNumSamples, &kurtosisTrimmed);
 	*kurtosisRatio = kurtosisRaw/kurtosisTrimmed;
-	PRINTF("DEBUG: RAW kurtosis %.3f, trimmed %.3f, dropped samples %u\r\n", kurtosisRaw, kurtosisTrimmed, dropNumSamples);
+	//PRINTF("DEBUG: RAW kurtosis %.3f, trimmed %.3f, dropped samples %u\r\n", kurtosisRaw, kurtosisTrimmed, dropNumSamples);
 	free(signalCopy);
 }
 

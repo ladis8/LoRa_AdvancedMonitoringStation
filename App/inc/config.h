@@ -1,3 +1,14 @@
+/*!
+ * \file		config.h
+ *
+ * \brief		Application config - definition of config structure and default configurations
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
+
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
@@ -10,6 +21,9 @@
 #include <stdint.h>
 #include "arm_math.h"
 
+
+ //TODO: check bit reverse and ifft
+ //TODO: find more logical order
 
 
 #define CFG_FWVER 0x01
@@ -52,8 +66,6 @@
 
 
  /* DEFAULT SETTING FOR FFT ADC */
- //TODO: check bit reverse and ifft
- //TODO: find more logical order
 #define CFG_ADC_CLOCK_DIVIDER 	ASYNC_DIV2
 #define CFG_ADC_SAMPLING_TIME 	S_160CYCLE5
 #define CFG_FFT_SAMPLES_NUM   	N_1024
@@ -126,11 +138,12 @@
 
 
 
- /* ALL CONFIGURATIONS */
+ /* Structure with all CONFIGURATIONS */
  typedef struct{
 
 	 uint8_t fwver;
 
+	//CONFIGURATIONS OF APP LOGIC
     struct{
        uint8_t sId; 		    // Session ID
        uint32_t uId; 		    //Unique ID of device == MAC (but only first 32 bit)
@@ -145,6 +158,7 @@
 
     } radionet;
 
+	//CONFIGURATIONS OF lORA MODULE
     struct{
     	uint8_t bw;
     	uint8_t sf;
@@ -155,6 +169,7 @@
 
 	} lora;
 
+	//CONFIGURATIONS OF ADC AND FFT STRUCTURE
 	struct{
 		uint8_t ifftFlag;
 		uint8_t doBitReverse;
@@ -168,6 +183,7 @@
 
 	} adc_fft;
 
+	//CONFIGURATIONS USED IN SIGNAL PROCESSING
 	struct{
 		uint16_t thresholdVoltage;
 		uint8_t kurtosisTrimmedSamples;
@@ -175,7 +191,8 @@
 		uint8_t rmsAveragingNum;
 	} dsp;
 
-
+	//CONFIGURATIONS OF MONITORING
+	//not used in status mode
     struct{
        uint16_t tempInterval;                // Temperature measure interval in ms
        uint16_t tempBufferSize;
@@ -194,7 +211,9 @@
 
 #define MEASURMENTS_BUFFER_SIZE 128
 
- typedef struct{
+ /* Structure with all BUFFERS */
+ //not used in status mode
+typedef struct{
 
 	 uint16_t tempBuffer[MEASURMENTS_BUFFER_SIZE];
 	 uint16_t loadcellBuffer [MEASURMENTS_BUFFER_SIZE];
@@ -208,9 +227,8 @@
 
 
 
-
+/* Function for printing configuration */
 void printConfig();
-
 
 
 

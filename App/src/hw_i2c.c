@@ -1,14 +1,22 @@
-
+/*!
+ * \file		hw_i2c.h
+ *
+ * \brief		I2C API - implementation of functions handling with I2C
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
 
 #include "hw.h"
 #include "utilities.h"
 
-//#include "stm32l0xx_hw_conf.h"
-
 
 static I2C_HandleTypeDef hi2c;
 
-void HW_I2C_Init(){
+void HW_I2C_Init()
+{
 
 	hi2c.Instance              = I2Cx;
 	hi2c.Init.Timing           = I2C_TIMING;
@@ -36,7 +44,8 @@ void HW_I2C_Init(){
 
 }
 
-void HW_I2C_DeInit(){
+void HW_I2C_DeInit()
+{
   HAL_I2C_DeInit(&hi2c);
   __HAL_RCC_I2C1_FORCE_RESET();
   __HAL_RCC_I2C1_RELEASE_RESET();
@@ -81,7 +90,8 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c)
 
 
 
-bool HW_I2C_MemRead(uint16_t devAdr, uint16_t regAdr, uint8_t *buff, uint16_t size){
+bool HW_I2C_MemRead(uint16_t devAdr, uint16_t regAdr, uint8_t *buff, uint16_t size)
+{
 	HAL_StatusTypeDef status =  HAL_I2C_Mem_Read(&hi2c, devAdr, regAdr, 1, buff, size,  I2C_TIMEOUT);
 
 	if (status != HAL_OK){
@@ -104,7 +114,8 @@ bool HW_I2C_MemWrite(uint16_t devAdr, uint16_t regAdr, uint8_t *buff, uint16_t s
 
 
 
-bool scanI2C1(){
+bool scanI2C1()
+{
 
 	bool someDevice = false;
 

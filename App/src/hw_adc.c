@@ -16,7 +16,8 @@ static bool adcInit = false;
 static ADC_HandleTypeDef hadc;
 static DMA_HandleTypeDef hdma_adc;
 
-static uint32_t configurableSamplingTime[] = {
+static uint32_t configurableSamplingTime[] =
+{
 		ADC_SAMPLETIME_1CYCLE_5,
 		ADC_SAMPLETIME_3CYCLES_5,
 		ADC_SAMPLETIME_7CYCLES_5,
@@ -26,7 +27,8 @@ static uint32_t configurableSamplingTime[] = {
 		ADC_SAMPLETIME_79CYCLES_5,
 		ADC_SAMPLETIME_160CYCLES_5
 };
-static uint32_t configurableADCDivider[] = {
+static uint32_t configurableADCDivider[] =
+{
 		ADC_CLOCK_ASYNC_DIV1,
 		ADC_CLOCK_ASYNC_DIV2,
 		ADC_CLOCK_ASYNC_DIV4,
@@ -41,12 +43,14 @@ static uint32_t configurableADCDivider[] = {
 
  __IO ITStatus ADCDMAFinished = RESET;
 
-void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc){
+void HAL_ADC_ConvCpltCallback( ADC_HandleTypeDef *hadc)
+{
 	ADCDMAFinished = SET;
 }
 
 
-void ADC_DMA_IRQHandler(){
+void ADC_DMA_IRQHandler()
+{
 	HAL_DMA_IRQHandler(hadc.DMA_Handle);
 }
 
@@ -246,7 +250,8 @@ uint16_t HW_ADC_ReadChannel( uint32_t channel )
 
     ADC_CLK_DISABLE();
   }
-  else {
+  else
+  {
 	  PRINTF("ERROR: ADC has not been initialized yet!\r\n");
   }
   return adcData;

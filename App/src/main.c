@@ -1,3 +1,14 @@
+/*!
+ * \file		main.c
+ *
+ * \brief		Main loop of application and Radio interrupts implementation
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
+
 
 #include "app.h"
 #include "hw.h"
@@ -12,50 +23,31 @@
 #include "dsp.h"
 
 
-//TODO: Questions
-//What floating point format to use for FFT? q15
-
 
 //TODO: Tasks
 	//join - timesync
 	//join - joinInterval apply from config
 	//fft  - try real fft
-	//move fft to separate file
+	//move TX to separate file
 
 #define DEBUG 1
-
 #define BUFFER_SIZE                  32 // Define the payload size here
 #define LED_PERIOD_MS               200
-
-
-
-/*#define LEDS_OFF   do{ \
-                   LED_Off( LED_BLUE ) ;   \
-                   LED_Off( LED_RED ) ;    \
-                   LED_Off( LED_GREEN1 ) ; \
-                   LED_Off( LED_GREEN2 ) ; \
-                   } while(0) ;
-*/
-
 
 
 
 
 uint16_t rxPacketBufferSize = BUFFER_SIZE;
 uint8_t rxPacketBuffer[BUFFER_SIZE];
-uint8_t fftBuffer[256];
-int8_t rssiValue = 0;
-int8_t snrValue = 0;
-int8_t rntErrors = 0;
-
+uint8_t fftBuffer[256];\
+int rssiValue = 0;
+int snrValue = 0;
+int rntErrors = 0;
 int seqnum;
 int numChunks;
-
 int configReqErr, joinReqErr = 0;
+int radioNetErrors = 0;
 
-
-/* Led Timers objects*/
-//static  TimerEvent_t timerLed;
 
 static TimerEvent_t timerStatus;
 static RadioEvents_t RadioEvents;
@@ -80,37 +72,9 @@ void txNodePacketHandler();
 
 
 
-void PWM_Init(void)
+
+void radioConfigure(void)
 {
-	GPIO_InitTypeDef initStruct={0};
-	initStruct.Mode =GPIO_MODE_AF_PP;
-	initStruct.Pull =GPIO_PULLUP;
-	initStruct.Speed = GPIO_SPEED_HIGH;
-	initStruct.Alternate= PWM_AF ;
-	HW_GPIO_Init( PWM_GPIOPORT, PWM_PIN, &initStruct);
-
-
-	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-	//set TIM2 prescaler to 1MHz clock
-	TIM2->PSC = 31;
-	//set TIM2 CNT overflow -- reset pin every 1 ms	==> 0.5khz
-	TIM2->ARR = 1000;
-
-	//enable mux pins TIM2_CH2 and TIM2_CH3 in output compare mode
-	TIM2->CCER |= TIM_CCER_CC2E;
-	//set the compare level
-	TIM2-> CCR2 = 0;
-
-	//set OC1M to 011 to toggle
-	TIM2->CCMR1 &= ~TIM_CCMR1_OC2M;
-	TIM2->CCMR1 |= (TIM_CCMR1_OC2M_0 | TIM_CCMR1_OC2M_1);
-	TIM2->CR1 |= TIM_CR1_CEN;
-
-}
-
-
-
-void radioConfigure(void){
     // Radio initialization
     RadioEvents.TxDone = OnTxDone;
     RadioEvents.RxDone = OnRxDone;
@@ -151,17 +115,14 @@ void radioConfigure(void){
 }
 
 
-int radioNetErrors = 0;
 
-int main(){
+int main()
+{
 
 
     HAL_Init( );
 
-    //differs
     SystemClock_Config();
-
-    PWM_Init();
     HW_Init( );
     TMP75_Init();
     radioConfigure();
@@ -172,17 +133,10 @@ int main(){
     //DBG_Init( );
 
     /*Disbale Stand-by mode*/
-    //LPM_SetOffMode(LPM_APPLI_Id , LPM_Disable );
-
-    /* Led Timers*/
-    //TimerInit(&timerLed, OnledEvent);
-    //TimerSetValue( &timerLed, LED_PERIOD_MS);
-    //TimerStart(&timerLed );
+    LPM_SetOffMode(LPM_APPLI_Id , LPM_Disable );
 
 
     PRINTF("\n\n\rStarting message loop...\r\n");
-
-    //sendStatusInfo();
 
 
     //send join request at first
@@ -204,14 +158,17 @@ int main(){
 
         case RX_TIMEOUT:
         case RX_ERROR:
-        	  if (loraNode_cfg.radionet.joinPending){
+        	  if (loraNode_cfg.radionet.joinPending)
+        	  {
         	    	loraNode_cfg.radionet.joinPending = false;
         	    	joinReqErr++;
         	  }
-        	  else if (loraNode_cfg.radionet.configPending){
+        	  else if (loraNode_cfg.radionet.configPending)
+        	  {
         	       	loraNode_cfg.radionet.configPending = false;
         	       	configReqErr++;
-        	       	if (configReqErr == 3){
+        	       	if (configReqErr == 3)
+        	       	{
         	       		loraNode_cfg.radionet.nodeJoined = false;
         	       		configReqErr = 0;
         	       	}
@@ -222,16 +179,18 @@ int main(){
             	  loraNode_cfg.radionet.state = TX;
               }
               //CASE02: if not joined --> keep sending join
-              else if (!loraNode_cfg.radionet.nodeConfigured){
+              else if (!loraNode_cfg.radionet.nodeConfigured)
+              {
                   loraNode_cfg.radionet.state = TX;
 
-             }
+              }
              //CASE02: if joined and in status mode --> ??
-             else if (APPLICATION_MODE == APP_STATUS_MODE){
+              else if (APPLICATION_MODE == APP_STATUS_MODE)
+              {
             	//SendStatusInfo(counter);
             	//loraNode_cfg.radionet.state = RX;
             	 PRINTF("RX ERROR: Note implemented yet...");
-            	break;
+            	 break;
               }
 
 
@@ -253,40 +212,46 @@ int main(){
         if (loraNode_cfg.radionet.state == LOWPOWER)
         {
 #ifndef LOW_POWER_DISABLE
-          //LPM_EnterLowPower( );
+          LPM_EnterLowPower( );
 #endif
         }
         ENABLE_IRQ( );
     }
 }
 
-void txNodePacketHandler(){
+void txNodePacketHandler()
+{
 
 	//CASE01: if not joined --> keep sending join request
-	if (!loraNode_cfg.radionet.nodeJoined){
+	if (!loraNode_cfg.radionet.nodeJoined)
+	{
 	     sendJoinRequest();
 	     loraNode_cfg.radionet.joinPending = true;
 	     loraNode_cfg.radionet.state = RX;
 	}
 	 //CASE02: if joined in status mode --> send config request
-	else if (!loraNode_cfg.radionet.nodeConfigured && APPLICATION_MODE == APP_STATUS_MODE){
+	else if (!loraNode_cfg.radionet.nodeConfigured && APPLICATION_MODE == APP_STATUS_MODE)
+	{
 		sendConfigRequest();
 		loraNode_cfg.radionet.configPending = true;
 		loraNode_cfg.radionet.state = RX;
 	}
     //CASE03: if joined, configured and in status mode --> send status info
 	//TODO: Listen after sent...
-	else if (APPLICATION_MODE == APP_STATUS_MODE){
+	else if (APPLICATION_MODE == APP_STATUS_MODE)
+	{
 	     sendStatusInfo();
 	     TimerSetValue(&timerStatus,loraNode_cfg.radionet.statusinfoInterval);
 	     TimerStart(&timerStatus);
 	     loraNode_cfg.radionet.state = LOWPOWER;
 	 }
 	//CASE03 if joined and in debug mode --> send proper info
-	else if (APPLICATION_MODE == APP_DEBUG_MODE){
+	else if (APPLICATION_MODE == APP_DEBUG_MODE)
+	{
 	       PRINTF("ERROR: Not implemented yet\r\n");
 	 }
-	else{
+	else
+	{
 		loraNode_cfg.radionet.state = LOWPOWER;
 	}
 
@@ -295,12 +260,14 @@ void txNodePacketHandler(){
 
 
 
-void sendJoinRequest(){
+void sendJoinRequest()
+{
 	//TODO: create config init method
 	//set uid to cfg structure
 	loraNode_cfg.radionet.uId = CFG_UID;
 
-	radioprot_join_req_t joinRequestPacket = {
+	radioprot_join_req_t joinRequestPacket =
+	{
 			.hdr.cmd = RADIOPROT_CMD_JOINREPLY << 4,
 			.hdr.sId = loraNode_cfg.radionet.sId,
 			.uId = loraNode_cfg.radionet.uId,
@@ -312,9 +279,11 @@ void sendJoinRequest(){
 	PRINTF("INFO: Sending JOIN REQUEST... size: %d \r\n", sizeof(joinRequestPacket));
 }
 
-void sendConfigRequest(){
+void sendConfigRequest()
+{
 
-	radioprot_config_req_t configRequestPacket = {
+	radioprot_config_req_t configRequestPacket =
+	{
 			.hdr.cmd = RADIOPROT_CMD_CONFIGREPLY << 4,
 			.hdr.sId = loraNode_cfg.radionet.sId,
 	};
@@ -325,7 +294,8 @@ void sendConfigRequest(){
 
 
 //TODO: low power mode beside ADC???
-void sendStatusInfo(){
+void sendStatusInfo()
+{
 
 	/* Measure temperature, battery level */
 	HW_ADC_Init();
@@ -447,7 +417,8 @@ void sendStatusInfo(){
 
 
 
-void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr ){
+void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr )
+{
     Radio.Sleep();
     PRINTF("\n\rOnRxDone: ");
 
@@ -468,14 +439,16 @@ void OnRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr ){
 }
 
 
-void OnRxTimeout(){
+void OnRxTimeout()
+{
 	PRINTF("\n\rOnRxTimeout\n\r");
     Radio.Sleep();
     loraNode_cfg.radionet.state = RX_TIMEOUT;
 
 }
 
-void OnRxError(){
+void OnRxError()
+{
     PRINTF("\n\rOnRxError\n\r");
     Radio.Sleep( );
     radioNetErrors++;
@@ -483,19 +456,16 @@ void OnRxError(){
 }
 
 
-void OnTxDone( void ){
+void OnTxDone( void )
+{
 
 	PRINTF("OnTxDone\n\n\r");
 	if (loraNode_cfg.radionet.state != RX){
 		Radio.Sleep();
 	}
-
-
-
-
-
 }
-void OnTxTimeout(){
+void OnTxTimeout()
+{
     PRINTF("OnTxTimeout\n\n\r");
     Radio.Sleep( );
 
@@ -510,18 +480,10 @@ void OnTxTimeout(){
 
 
 
-void OnStatusinfoTimerDone(void *context){
+void OnStatusinfoTimerDone(void *context)
+{
 	//cause to send status info
 	loraNode_cfg.radionet.state = TX;
 }
 
-/*static void OnledEvent( void* context )
-{
-  LED_Toggle( LED_BLUE ) ; 
-  LED_Toggle( LED_RED1 ) ; 
-  LED_Toggle( LED_RED2 ) ; 
-  LED_Toggle( LED_GREEN ) ;   
-
-  TimerStart(&timerLed );
-}*/
 

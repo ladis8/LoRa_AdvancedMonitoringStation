@@ -1,8 +1,20 @@
-
+/*!
+ * \file		radionet_cmd_api.c
+ *
+ * \brief		Application command API - implementation of RX packet handlers
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
 
 #include "app.h"
 #include "util_console.h"
 #include "radio.h"
+
+//TODO: Configure Radio after join reply
+//TODO: RESTART packet
 
 
 bool _joinReplyCallback(radioprot_gw_packet_t *packet){
@@ -123,7 +135,7 @@ void rxGWPacketHandler(radioprot_gw_packet_t *packet){
     	break;
 
     	case RADIOPROT_CMD_RESTART:{
-    		bool resetConfig =true;
+    		bool resetConfig = true;
     	};
     	break;
 

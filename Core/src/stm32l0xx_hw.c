@@ -1,35 +1,15 @@
-/*
- / _____)             _              | |
-( (____  _____ ____ _| |_ _____  ____| |__
- \____ \| ___ |    (_   _) ___ |/ ___)  _ \
- _____) ) ____| | | || |_| ____( (___| | | |
-(______/|_____)_|_|_| \__)_____)\____)_| |_|
-    (C)2013 Semtech
+/*!
+ * \file		stm32loxx_hw.c
+ *
+ * \brief		System hardware driver configuration
+ *
+ * \copyright
+ *
+ * \author		MCD Application Team, Ladislav Stefka
+ *
+ */
 
-Description: Target board general functions implementation
 
-License: Revised BSD License, see LICENSE.TXT file include in the project
-
-Maintainer: Miguel Luis and Gregory Cristian
-*/
-/**
-  ******************************************************************************
-  * @file    stm32l0xx_hw.c
-  * @author  MCD Application Team
-  * @brief   system hardware driver
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2018 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
 
 #include "hw.h"
 #include "radio.h"
@@ -107,6 +87,8 @@ void HW_Init( void )
 
     HW_RTC_Init( );
     
+    PWM_Init();
+
     TraceInit( );
 
     McuInitialized = true;
@@ -163,9 +145,11 @@ void HW_GpioInit(void)
   /* STM32L0 Gpios are all already configured in analog input at nReset*/
 }
 
+
+
 /**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow :
+  * @brief  System clock configuration - 32 MHz by using HSI and PLL
+  * The system Clock is configured as follow :
   *            System Clock source            = PLL (HSI)
   *            SYSCLK(Hz)                     = 32000000
   *            HCLK(Hz)                       = 32000000
@@ -175,49 +159,9 @@ void HW_GpioInit(void)
   *            HSI Frequency(Hz)              = 16000000
   *            PLLMUL                         = 6
   *            PLLDIV                         = 3
-  *            Flash Latency(WS)              = 1
+  * @autor 	Ladislav Stefka
   * @retval None
   */
-
-void SystemClock_Config_dep (void){
-	  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-	  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-
-	  /* Enable MSI Oscillator */
-	  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
-	  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-	  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
-	  RCC_OscInitStruct.MSICalibrationValue=0x00;
-	  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-	  if (HAL_RCC_OscConfig(&RCC_OscInitStruct)!= HAL_OK)
-	  {
-	    /* Initialization Error */
-	    while(1);
-	  }
-
-	  /* Select MSI as system clock source and configure the HCLK, PCLK1 and PCLK2
-	     clocks dividers */
-	  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-	  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
-	  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-	  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-	  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0)!= HAL_OK)
-	  {
-	    /* Initialization Error */
-	    while(1);
-	  }
-	  /* Enable Power Control clock */
-	  __HAL_RCC_PWR_CLK_ENABLE();
-
-	  /* The voltage scaling allows optimizing the power consumption when the device is
-	     clocked below the maximum system frequency, to update the voltage scaling value
-	     regarding system frequency refer to product datasheet.  */
-	  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
-
-	  /* Disable Power Control clock */
-	  __HAL_RCC_PWR_CLK_DISABLE();
-}
 
 void SystemClock_Config( void )
 {
@@ -240,11 +184,9 @@ void SystemClock_Config( void )
     Error_Handler();
   }
 
-  /* Set Voltage scale1 as MCU will run at 32MHz */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   
-  /* Poll VOSF bit of in PWR_CSR. Wait until it is reset to 0 */
   while (__HAL_PWR_GET_FLAG(PWR_FLAG_VOS) != RESET) {};
 
   /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
@@ -260,6 +202,46 @@ void SystemClock_Config( void )
   }
 
 }
+
+/**
+  * @brief  PWM configuration 1 kHz
+  * @autor 	Ladislav Stefka
+  * @retval None
+  */
+
+void PWM_Init(void)
+{
+	GPIO_InitTypeDef initStruct={0};
+	initStruct.Mode =GPIO_MODE_AF_PP;
+	initStruct.Pull =GPIO_PULLUP;
+	initStruct.Speed = GPIO_SPEED_HIGH;
+	initStruct.Alternate= PWM_AF ;
+	HW_GPIO_Init( PWM_GPIOPORT, PWM_PIN, &initStruct);
+
+
+	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+	//set TIM2 prescaler to 1MHz clock
+	TIM2->PSC = 31;
+	//set TIM2 CNT overflow -- reset pin every 1 ms	==> 0.5khz
+	TIM2->ARR = 1000;
+
+	//enable mux pins TIM2_CH2 and TIM2_CH3 in output compare mode
+	TIM2->CCER |= TIM_CCER_CC2E;
+	//set the compare level
+	TIM2-> CCR2 = 0;
+
+	//set OC1M to 011 to toggle
+	TIM2->CCMR1 &= ~TIM_CCMR1_OC2M;
+	TIM2->CCMR1 |= (TIM_CCMR1_OC2M_0 | TIM_CCMR1_OC2M_1);
+	TIM2->CR1 |= TIM_CR1_CEN;
+
+}
+
+
+
+
+
+
 /**
   * @brief This function return a random seed
   * @note based on the device unique ID

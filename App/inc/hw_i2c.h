@@ -1,12 +1,16 @@
-/*
- * hw_i2c.h
+/*!
+ * \file		hw_i2c.h
  *
- *  Created on: Dec 28, 2018
- *      Author: ladislav
+ * \brief		I2C API - definition of functions handling with I2c
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
  */
 
-#ifndef PROJECTS_PINGPONG_HW_I2C_H_
-#define PROJECTS_PINGPONG_HW_I2C_H_
+#ifndef __HW_I2C_H__
+#define __HW_I2C_H__
 
 
 
@@ -16,17 +20,24 @@
 #include <stdbool.h>
 
 
-
+/* Initialize I2C1 */
 void HW_I2C_Init();
+
+/* Deinitialize I2C1 */
 void HW_I2C_DeInit();
+
+/* Initialize I2C1 pins */
 void HW_I2C_IoInit ();
 
+/* Read memory from I2C slave */
 bool HW_I2C_MemRead(uint16_t devAdr, uint16_t regAdr, uint8_t *buff, uint16_t size);
 
+/* Write to memory of I2C slave */
 bool HW_I2C_MemWrite(uint16_t devAdr, uint16_t regAdr, uint8_t *buff, uint16_t size);
 
+/* Scan I2C bus */
 bool scanI2C1();
 
 
 
-#endif /* PROJECTS_PINGPONG_HW_I2C_H_ */
+#endif

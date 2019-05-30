@@ -1,5 +1,16 @@
-#ifndef __APP_PROTOCOL_H
-#define __APP_PROTOCOL_H
+/*!
+ * \file		radio_protocol.h
+ *
+ * \brief		Application radio protocol - definition of radio packets
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
+ */
+
+#ifndef __APP_PROTOCOL_H__
+#define __APP_PROTOCOL_H__
 
 #ifndef __PACKED__
 #define __PACKED__   __attribute__ ((__packed__))
@@ -75,6 +86,9 @@ typedef struct
 
 } __PACKED__ radioprot_status_info_t;
 
+
+
+
 /********** Node  -- > GW **********/
 
 
@@ -128,23 +142,8 @@ typedef struct
 
 
 
-
-
-
-
-typedef struct
-{
-	uint8_t nsamples;
-} __PACKED__ radioprot_measure_info_req_t;
-
-typedef struct
-{
-} __PACKED__ radioprot_measure_info_t;
-
-
-
-
 /*-----------SENSOR PACKETS-----------*/
+ // not used in app in status mode
 #define RADIOPROT_SENSOR_DATA_TYPE_TEMP       0x01
 #define RADIOPROT_SENSOR_DATA_TYPE_FFT        0x02
 #define RADIOPROT_SENSOR_DATA_TYPE_LOADCELL   0x03
@@ -194,6 +193,7 @@ typedef struct
 
 
 /*-----------CHUNK PACKETS-----------*/
+// not used in app in status mode
 #define RADIOPROT_CHUNK_TYPE_FFT       0x01
 #define RADIOPROT_CHUNK_TYPE_ADC       0x02
 
@@ -234,7 +234,6 @@ typedef struct
 } __PACKED__ radioprot_chunk_data_t;
 
 /*-----------CHUNK PACKETS-----------*/
-
 
 
 

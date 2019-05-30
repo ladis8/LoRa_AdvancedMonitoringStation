@@ -1,3 +1,5 @@
+
+
 /*
  / _____)             _              | |
 ( (____  _____ ____ _| |_ _____  ____| |__
@@ -51,12 +53,14 @@ extern "C" {
 #include "hw_msp.h"
 #include "util_console.h"
 #include "debug.h"
+#include "sensor_tmp75.h"
+
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __HW_H__ */
+#endif
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

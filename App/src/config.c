@@ -1,9 +1,14 @@
-/*
- * config.c
+/*!
+ * \file		config.c
  *
- *  Created on: Mar 4, 2019
- *      Author: ladislav
+ * \brief		Application config - implementation of config structure
+ *
+ * \copyright
+ *
+ * \author		Ladislav Stefka
+ *
  */
+
 
 #include "config.h"
 
@@ -11,25 +16,29 @@
 #include "util_console.h"
 
 //WISDOM: variables definied in config.h are multiply defined by inclusion
-
-
-const char * adcSamplingTime_names[] = {
-		 "S_1CYCLE5","S_3CYCLE5","S_7CYCLE5","S_12CYCLE5",
-		 "S_19CYCLE5","S_39CYCLE5","S_79CYCLE5","S_160CYCLE5"
- };
-
-const char * adcDivider_names[] = {
-	 "ASYNC_DIV1","ASYNC_DIV2","ASYNC_DIV4","ASYNC_DIV8","ASYNC_DIV16",
-	 "ASYNC_DIV32","ASYNC_DIV64","ASYNC_DIV128","ASYNC_DIV256"
- };
-
-const char * fftSamplesNum_names[] = {
-	"N_64","N_128","N_512","N_1024","N_2048"
- };
-
 //TODO: Statusinfo interval in seconds
 
-loraNode_cfg_t loraNode_cfg = {
+
+const char * adcSamplingTime_names[] =
+{
+		 "S_1CYCLE5","S_3CYCLE5","S_7CYCLE5","S_12CYCLE5",
+		 "S_19CYCLE5","S_39CYCLE5","S_79CYCLE5","S_160CYCLE5"
+};
+
+const char * adcDivider_names[] =
+{
+	 "ASYNC_DIV1","ASYNC_DIV2","ASYNC_DIV4","ASYNC_DIV8","ASYNC_DIV16",
+	 "ASYNC_DIV32","ASYNC_DIV64","ASYNC_DIV128","ASYNC_DIV256"
+};
+
+const char * fftSamplesNum_names[] =
+{
+	"N_64","N_128","N_512","N_1024","N_2048"
+};
+
+
+loraNode_cfg_t loraNode_cfg =
+{
 
 		 .fwver = CFG_FWVER,
 
@@ -73,7 +82,8 @@ loraNode_cfg_t loraNode_cfg = {
 };
 
 
-void printConfig(){
+void printConfig()
+{
 
 	PRINTF("Config params: \r\n");
 	PRINTF("Radionet params: \r\n");

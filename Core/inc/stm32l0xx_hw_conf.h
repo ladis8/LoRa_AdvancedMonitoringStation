@@ -1,3 +1,14 @@
+/*!
+ * \file		stm32loxx_hw_conf.h
+ *
+ * \brief		System hardware driver definitions
+ *
+ * \copyright
+ *
+ * \author		MCD Application Team, Ladislav Stefka
+ *
+ */
+
 #ifndef __HW_CONF_L0_H__
 #define __HW_CONF_L0_H__
 
